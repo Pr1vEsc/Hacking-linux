@@ -282,7 +282,7 @@ then update the opstions and then write:
 run
 ```
   
-  
+---------------------------------------------------------------------------------------------------------------------------------------------------------
   
 ### basic local machine enumeration
 This task focuses on enumerating a Linux machine after accessing a shell, such as bash. Although some commands provide information on more than one area, we tried to group the commands into four categories depending on the information we expect to acquire.
