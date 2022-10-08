@@ -435,5 +435,6 @@ If you would like to install snmpcheck on your local Linux box, consider the fol
 
 # Linux Privilige Escalation
 
+### Tib3rius ⁣Privilege Escalation
 
 
