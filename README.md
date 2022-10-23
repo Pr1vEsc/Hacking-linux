@@ -33,7 +33,7 @@ Hacking linux
   - [SNMP](#SNMP)
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 - [Linux Privilige Escalation](#Linux-Privilige-Escalation)
-  - Automated Enumeration Tools](#Automated-Enumeration-Tools)
+  - [Automated Enumeration Tools](#Automated-Enumeration-Tools)
   - [Enumeration](#Enumeration)
   - [Privilege Escalation Kernel Exploits](#Privilege-Escalation-Kernel-Exploits)
   - [Privilege Escalation Sudo](#Privilege-Escalation-Sudo)
