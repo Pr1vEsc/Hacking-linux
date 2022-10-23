@@ -752,7 +752,11 @@ On some systems, you may see the LD_PRELOAD environment option.
 
 ![image](https://user-images.githubusercontent.com/24814781/197423839-46bfe00a-9360-4097-a150-371d62a275ce.png)
 
-LD_PRELOAD is a function that allows any program to use shared libraries. This blog post will give you an idea about the capabilities of LD_PRELOAD. If the "env_keep" option is enabled we can generate a shared library which will be loaded and executed before the program is run. Please note the LD_PRELOAD option will be ignored if the real user ID is different from the effective user ID.
+LD_PRELOAD is a function that allows any program to use shared libraries. This blog post
+```
+https://rafalcieslak.wordpress.com/2013/04/02/dynamic-linker-tricks-using-ld_preload-to-cheat-inject-features-and-investigate-programs/
+```
+will give you an idea about the capabilities of LD_PRELOAD. If the "env_keep" option is enabled we can generate a shared library which will be loaded and executed before the program is run. Please note the LD_PRELOAD option will be ignored if the real user ID is different from the effective user ID.
 
 The steps of this privilege escalation vector can be summarized as follows;
 
