@@ -33,10 +33,7 @@ Hacking linux
   - [SNMP](#SNMP)
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 - [Linux Privilige Escalation](#Linux-Privilige-Escalation)
-  - [Automated Enumeration Tools](#Automated-Enumeration-Tools)
-  - [Enumeration](#Enumeration)
-  - [Privilege Escalation Kernel Exploits](#Privilege-Escalation-Kernel-Exploits)
-  - [Privilege Escalation Sudo](#Privilege-Escalation-Sudo)
+
 - [Tib3rius ⁣Privilege Escalation](#Tib3rius-Privilege-Escalation)
   - [](#) 
   - [](#)
@@ -49,6 +46,10 @@ Hacking linux
   - [](#)
   - [](#)
 - [Linux Privilige Escalation 1](#Linux-Privilige-Escalation-1)
+  - [Automated Enumeration Tools](#Automated-Enumeration-Tools)
+  - [Enumeration](#Enumeration)
+  - [Privilege Escalation Kernel Exploits](#Privilege-Escalation-Kernel-Exploits)
+  - [Privilege Escalation Sudo](#Privilege-Escalation-Sudo)
 - [Linux Privilige Escalation 2](#Linux-Privilige-Escalation-2)
   - [Kernel Exploits](#Kernel-Exploits)
   - [Stored Passwords (Config Files)](#Stored-Passwords-Config-Files)
