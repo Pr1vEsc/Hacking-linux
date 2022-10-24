@@ -50,6 +50,8 @@ Hacking linux
   - [Enumeration](#Enumeration)
   - [Privilege Escalation Kernel Exploits](#Privilege-Escalation-Kernel-Exploits)
   - [Privilege Escalation Sudo](#Privilege-Escalation-Sudo)
+  - [Privilege Escalation SUID](#Privilege-Escalation-SUID)
+  - [Privilege Escalation Capabilities](#Privilege-Escalation-Capabilities)
 - [Linux Privilige Escalation 2](#Linux-Privilige-Escalation-2)
   - [Kernel Exploits](#Kernel-Exploits)
   - [Stored Passwords (Config Files)](#Stored-Passwords-Config-Files)
@@ -795,6 +797,88 @@ sudo LD_PRELOAD=/home/user/ldpreload/shell.so find
 This will result in a shell spawn with root privileges. 
 
 ![image](https://user-images.githubusercontent.com/24814781/197423895-55556c7b-7045-48ce-8a9f-6ca1d90b5eb6.png)
+
+
+### Privilege Escalation SUID 
+
+
+Much of Linux privilege controls rely on controlling the users and files interactions. This is done with permissions. By now, you know that files can have read, write, and execute permissions. These are given to users within their privilege levels. This changes with SUID (Set-user Identification) and SGID (Set-group Identification). These allow files to be executed with the permission level of the file owner or the group owner, respectively.
+
+You will notice these files have an “s” bit set showing their special permission level.
+```
+find / -type f -perm -04000 -ls 2>/dev/null 
+```
+will list files that have SUID or SGID bits set.
+
+![image](https://user-images.githubusercontent.com/24814781/197632449-7d4a0410-cc45-41f8-93f1-56cd9c8ee5bf.png)
+
+A good practice would be to compare executables on this list with GTFOBins (https://gtfobins.github.io). Clicking on the SUID button will filter binaries known to be exploitable when the SUID bit is set (you can also use this link for a pre-filtered list https://gtfobins.github.io/#+suid).
+
+The list above shows that nano has the SUID bit set. Unfortunately, GTFObins does not provide us with an easy win. Typical to real-life privilege escalation scenarios, we will need to find intermediate steps that will help us leverage whatever minuscule finding we have.
+
+
+![image](https://user-images.githubusercontent.com/24814781/197632523-6aee4e29-7640-4837-b9e4-52965f07aa9f.png)
+
+
+The SUID bit set for the nano text editor allows us to create, edit and read files using the file owner’s privilege. Nano is owned by root, which probably means that we can read and edit files at a higher privilege level than our current user has. At this stage, we have two basic options for privilege escalation: reading the /etc/shadow file or adding our user to /etc/passwd.
+
+Below are simple steps using both vectors.
+
+reading the /etc/shadow file
+
+We see that the nano text editor has the SUID bit set by running the find / -type f -perm -04000 -ls 2>/dev/null command.
+
+nano /etc/shadow will print the contents of the /etc/shadow file. We can now use the unshadow tool to create a file crackable by John the Ripper. To achieve this, unshadow needs both the /etc/shadow and /etc/passwd files.
+
+![image](https://user-images.githubusercontent.com/24814781/197632582-272e5db3-e259-416c-81f9-63850dac5f3b.png)
+
+The unshadow tool’s usage can be seen below;
+unshadow passwd.txt shadow.txt > passwords.txt
+
+![image](https://user-images.githubusercontent.com/24814781/197632608-2572f8fa-e5cc-430f-885a-14586296d8a9.png)
+
+With the correct wordlist and a little luck, John the Ripper can return one or several passwords in cleartext. 
+
+The other option would be to add a new user that has root privileges. This would help us circumvent the tedious process of password cracking. Below is an easy way to do it:
+
+
+We will need the hash value of the password we want the new user to have. This can be done quickly using the openssl tool on Kali Linux.
+
+![image](https://user-images.githubusercontent.com/24814781/197632677-a1194d7e-803f-4ba4-b448-3fd5aed2adee.png)
+
+We will then add this password with a username to the /etc/passwd file.
+
+![image](https://user-images.githubusercontent.com/24814781/197632739-77c35a9c-3a1f-4ec4-aec1-e8b8c44c73b4.png)
+
+Once our user is added (please note how root:/bin/bash was used to provide a root shell) we will need to switch to this user and hopefully should have root privileges. 
+
+![image](https://user-images.githubusercontent.com/24814781/197632766-64ee6c89-0033-453f-a6dd-c84d700cd26e.png)
+
+
+### Privilege Escalation Capabilities
+
+Another method system administrators can use to increase the privilege level of a process or binary is “Capabilities”. Capabilities help manage privileges at a more granular level. For example, if the SOC analyst needs to use a tool that needs to initiate socket connections, a regular user would not be able to do that. If the system administrator does not want to give this user higher privileges, they can change the capabilities of the binary. As a result, the binary would get through its task without needing a higher privilege user.
+The capabilities man page provides detailed information on its usage and options.
+
+We can use the getcap tool to list enabled capabilities.
+
+![image](https://user-images.githubusercontent.com/24814781/197636563-50ff91e0-7d98-49a7-be8d-a2d4f4cbe376.png)
+
+When run as an unprivileged user, getcap -r / will generate a huge amount of errors, so it is good practice to redirect the error messages to /dev/null.
+
+Please note that neither vim nor its copy has the SUID bit set. This privilege escalation vector is therefore not discoverable when enumerating files looking for SUID.
+
+![image](https://user-images.githubusercontent.com/24814781/197636583-9fe5fabf-e190-4c80-85b2-7d6d3121aa98.png)
+
+GTFObins has a good list of binaries that can be leveraged for privilege escalation if we find any set capabilities.
+
+We notice that vim can be used with the following command and payload:
+
+![image](https://user-images.githubusercontent.com/24814781/197636602-55ea0166-8c19-4ff6-8e41-adcb2d21e3c7.png)
+
+This will launch a root shell as seen below;
+
+![image](https://user-images.githubusercontent.com/24814781/197636621-b02a3962-5e1f-4421-9bac-97238c422d0c.png)
 
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
