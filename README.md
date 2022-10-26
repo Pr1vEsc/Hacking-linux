@@ -496,7 +496,7 @@ The target system’s environment will influence the tool you will be able to us
 *    Linux Smart Enumeration: https://github.com/diego-treitos/linux-smart-enumeration
 *    Linux Priv Checker: https://github.com/linted/linuxprivchecker 
 
-### Enumeration
+# Enumeration
 
 #### hostname
 
@@ -692,12 +692,12 @@ Below is a short example used to find files that have the SUID bit set. The SUID
 
 * find / -perm -u=s -type f 2>/dev/null: Find files with the SUID bit, which allows us to run the file with a higher privilege level than the current user.
 
-#### General Linux Commands
+### General Linux Commands
 
 As we are in the Linux realm, familiarity with Linux commands, in general, will be very useful. Please spend some time getting comfortable with commands such as find, locate, grep, cut, sort, etc. 
 
 
-#### Privilege Escalation Kernel Exploits
+# Privilege Escalation Kernel Exploits
 
 Privilege escalation ideally leads to root privileges. This can sometimes be achieved simply by exploiting an existing vulnerability, or in some cases by accessing another user account that has more privileges, information, or access.
 
@@ -731,8 +731,7 @@ Hints/Notes:
 3.    Some exploits may require further interaction once they are run. Read all comments and instructions provided with the exploit code.
 4.    You can transfer the exploit code from your machine to the target system using the SimpleHTTPServer Python module and wget respectively. 
 
-
-### Privilege Escalation Sudo
+# Privilege Escalation Sudo
 
 #### The sudo command, by default, allows you to run a program with root privileges. Under some conditions, system administrators may need to give regular users some flexibility on their privileges. For example, a junior SOC analyst may need to use Nmap regularly but would not be cleared for full root access. In this situation, the system administrator can allow this user to only run Nmap with root privileges while keeping its regular privilege level throughout the rest of the system.
 
@@ -802,7 +801,7 @@ This will result in a shell spawn with root privileges.
 ![image](https://user-images.githubusercontent.com/24814781/197423895-55556c7b-7045-48ce-8a9f-6ca1d90b5eb6.png)
 
 
-### Privilege Escalation SUID 
+# Privilege Escalation SUID 
 
 
 Much of Linux privilege controls rely on controlling the users and files interactions. This is done with permissions. By now, you know that files can have read, write, and execute permissions. These are given to users within their privilege levels. This changes with SUID (Set-user Identification) and SGID (Set-group Identification). These allow files to be executed with the permission level of the file owner or the group owner, respectively.
@@ -858,7 +857,7 @@ Once our user is added (please note how root:/bin/bash was used to provide a roo
 ![image](https://user-images.githubusercontent.com/24814781/197632766-64ee6c89-0033-453f-a6dd-c84d700cd26e.png)
 
 
-### Privilege Escalation Capabilities
+# Privilege Escalation Capabilities
 
 Another method system administrators can use to increase the privilege level of a process or binary is “Capabilities”. Capabilities help manage privileges at a more granular level. For example, if the SOC analyst needs to use a tool that needs to initiate socket connections, a regular user would not be able to do that. If the system administrator does not want to give this user higher privileges, they can change the capabilities of the binary. As a result, the binary would get through its task without needing a higher privilege user.
 The capabilities man page provides detailed information on its usage and options.
@@ -884,7 +883,7 @@ This will launch a root shell as seen below;
 ![image](https://user-images.githubusercontent.com/24814781/197636621-b02a3962-5e1f-4421-9bac-97238c422d0c.png)
 
 
-### Privilege Escalation Cron Jobs
+# Privilege Escalation Cron Jobs
 
 Cron jobs are used to run scripts or binaries at specific times. By default, they run with the privilege of their owners and not the current user. While properly configured cron jobs are not inherently vulnerable, they can provide a privilege escalation vector under some conditions.
 The idea is quite simple; if there is a scheduled task that runs with root privileges and we can change the script that will be run, then our script will run with root privileges.
@@ -1027,7 +1026,7 @@ We have given executable rights to our copy of /bin/bash, please note that at th
 
 ![image](https://user-images.githubusercontent.com/24814781/197884528-1afab975-c194-44ee-be57-cf1099934417.png)
 
-### Privilege Escalation NFS
+# Privilege Escalation NFS
 
 Privilege escalation vectors are not confined to internal access. Shared folders and remote management interfaces such as SSH and Telnet can also help you gain root access on the target system. Some cases will also require using both vectors, e.g. finding a root SSH private key on the target system and connecting via SSH with root privileges instead of trying to increase your current user’s privilege level.
 
