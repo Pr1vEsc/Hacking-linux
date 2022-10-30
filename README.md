@@ -38,7 +38,7 @@ Hacking linux
   - [Setup](#Setup) 
   - [General Concepts](#General-Concepts)
   - [Understanding Permissions in Linux](#Understanding-Permissions-in-Linux)
-  - [Users, Groups, and Files & Directories](#Users,-Groups,-and-Files-&-Directories)
+  - [Users Groups and Files and Directories](#Users-Groups-and-Files-and-Directories)
   - [priv-esc Users](#priv-esc-Users)
   - [Groups](#Groups)
   - [Files and Directories](#Files-and-Directories)
@@ -528,6 +528,7 @@ important.
 
 ### Understanding Permissions in Linux
 
+#### Users Groups and Files and Directories
 At a basic level, permissions in Linux are a relationship between
 users, groups, and files & directories.
 Users can belong to multiple groups.
