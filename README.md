@@ -46,7 +46,7 @@ Hacking linux
   - [Directory Permissions](#Directory-Permissions)
   - [Special Permissions](#Special-Permissions)
   - [Viewing Permissions](#Viewing-Permissions)
-  - [Real, Effective, & Saved UID and GID](#Real,-Effective,-&-Saved-UID-and-GID)
+  - [Real and Effective & Saved UID and GID](#Real-and-Effective-&-Saved-UID-and-GID)
   - [Spawning Root Shells](#Spawning-Root-Shells)
   - [](#)
   - [](#)
@@ -604,7 +604,7 @@ Each set contains 3 characters, indicating the read (r), write
 SUID/SGID permissions are represented by an 's' in the
 execute position.
 
-#### Real, Effective, & Saved UID and GID
+#### Real and Effective & Saved UID and GID
 I previously stated that users are identified by a user ID.
 In fact, each user has 3 user IDs in Linux (real, effective, and
 saved).
