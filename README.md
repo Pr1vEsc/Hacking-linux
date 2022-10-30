@@ -35,10 +35,19 @@ Hacking linux
 - [Linux Privilige Escalation](#Linux-Privilige-Escalation)
 
 - [Tib3rius ⁣Privilege Escalation](#Tib3rius-Privilege-Escalation)
-  - [](#) 
-  - [](#)
-  - [](#)
-  - [](#)
+  - [Setup](#Setup) 
+  - [General Concepts](#General-Concepts)
+  - [Understanding Permissions in Linux](#Understanding-Permissions-in-Linux)
+  - [Users, Groups, and Files & Directories](#Users,-Groups,-and-Files-&-Directories)
+  - [Users](#Users)
+  - [Groups](#Groups)
+  - [Files & Directories](#Files-&-Directories)
+  - [File Permissions](#File-Permissions)
+  - [Directory Permissions](#Directory-Permissions)
+  - [Special Permissions](#Special-Permissions)
+  - [Viewing Permissions](#Viewing-Permissions)
+  - [Real, Effective, & Saved UID and GID](#Real,-Effective,-&-Saved-UID-and-GID)
+  - [Spawning Root Shells](#Spawning-Root-Shells)
   - [](#)
   - [](#)
   - [](#)
@@ -478,11 +487,160 @@ If you would like to install snmpcheck on your local Linux box, consider the fol
 
 ## Tib3rius ⁣Privilege Escalation
 
+### Setup 
+This course will be using the Debian VM from the
+following workshop:
+https://github.com/sagishahar/lpeworkshop
+The Debian VM has been intentionally misconfigured
+with numerous privilege escalation methods.
+
+#### Setup (cont.)
+You can download the VM from the Udemy course page.
+The version on Udemy includes a few new methods of
+privilege escalation. It is recommended that you use this VM
+for the course.
+The “user” account password is: password321
+The “root” account password is: password123
+
+If for some reason you need to use the original VM, or
+perhaps you already have it set up, I have created a Bash
+script which integrates a few more misconfigurations into the
+VM: https://github.com/Tib3rius/privesc-setup
+Log onto the VM as the root user (root/password123) and
+run the script.
+
+### General Concepts
+
+Our ultimate goal with privilege escalation in Linux is to gain a shell
+running as the root user.
+Privilege escalation can be simple (e.g. a kernel exploit) or require a
+lot of reconnaissance on the compromised system.
+In a lot of cases, privilege escalation may not simply rely on a single
+misconfiguration, but may require you to think, and combine
+multiple misconfigurations.
+
+All privilege escalations are effectively examples of access
+control violations.
+Access control and user permissions are intrinsically linked.
+When focusing on privilege escalations in Linux,
+understanding how Linux handles permissions is very
+important.
+
+### Understanding Permissions in Linux
+
+At a basic level, permissions in Linux are a relationship between
+users, groups, and files & directories.
+Users can belong to multiple groups.
+Groups can have multiple users.
+Every file and directory defines its permissions in terms of a user, a
+group, and “others” (all other users).
+
+#### Users
+
+User accounts are configured in the /etc/passwd file.
+User password hashes are stored in the /etc/shadow file.
+Users are identified by an integer user ID (UID).
+The “root” user account is a special type of account in Linux.
+It has an UID of 0, and the system grants this user access to
+every file.
+
+#### Groups
+
+Groups are configured in the /etc/group file.
+Users have a primary group, and can have multiple
+secondary (or supplementary) groups.
+By default, a user’s primary group has the same name
+as their user account.
+
+#### Files & Directories
+All files & directories have a single owner and a group.
+Permissions are defined in terms of read, write, and execute
+operations.
+There are three sets of permissions, one for the owner, one for
+the group, and one for all “other” users (can also be referred to
+as “world”).
+Only the owner can change permissions.
+
+#### File Permissions
+File permissions are self explanatory:
+• Read – when set, the file contents can be read.
+• Write – when set, the file contents can be modified.
+• Execute – when set, the file can be executed (i.e. run as
+some kind of process).
+
+#### Directory Permissions
+Directory permissions are slightly more complicated:
+• Execute – when set, the directory can be entered. Without this
+permission, neither the read nor write permissions will work.
+• Read – when set, the directory contents can be listed.
+• Write – when set, files and subdirectories can be created in the
+directory.
+
+#### Special Permissions
+setuid (SUID) bit
+When set, files will get executed with the privileges of the file owner.
+setgid (SGID) bit
+When set on a file, the file will get executed with the privileges of the
+file group.
+When set on a directory, files created within that directory will inherit
+the group of the directory itself.
+
+#### Viewing Permissions
+The ls command can be used to view permissions:
+```
+$ ls -l /bin/date
+-rwxr-xr-x 1 root root 60416 Apr 28 2010 /bin/date
+```
+The first 10 characters indicate the permissions set on the file
+or directory.
+The first character simply indicates the type (e.g. '-' for file, 'd'
+for directory).
+
+#### Viewing Permissions
+The remaining 9 characters represent the 3 sets of
+permissions (owner, group, others).
+Each set contains 3 characters, indicating the read (r), write
+(w), and execute (x) permissions.
+SUID/SGID permissions are represented by an 's' in the
+execute position.
+
+#### Real, Effective, & Saved UID and GID
+I previously stated that users are identified by a user ID.
+In fact, each user has 3 user IDs in Linux (real, effective, and
+saved).
+A user’s real ID is who they actually are (the ID defined in
+/etc/passwd). Ironically, the real ID is actually used less often to
+check a user’s identity.
+
+A user’s effective ID is normally equal to their real ID, however when
+executing a process as another user, the effective ID is set to that user’s
+real ID.
+The effective ID is used in most access control decisions to verify a user,
+and commands such as whoami use the effective ID.
+Finally, the saved ID is used to ensure that SUID processes can
+temporarily switch a user’s effective ID back to their real ID and back
+again without losing track of the original effective ID
+
+Print real and effective user / group IDs:
+```
+# id
+uid=1000(user) gid=1000(user) euid=0(root) egid=0(root) groups=0(root),24(cdrom),25(floppy),29(audio),30(dip),44(video),46(plugdev),1000(user)
+```
+
+Print real, effective, saved, and file system user / group IDs of
+the current process (i.e. our shell):
+```
+# cat /proc/$$/status | grep "[UG]id"
+Uid: 1000 0 0 0
+Gid: 1000 0 0 0
+```
+
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## Linux Privilige Escalation 1
 
 ### Automated Enumeration Tools
+
 
 
 
