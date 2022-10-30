@@ -41,7 +41,7 @@ Hacking linux
   - [Users, Groups, and Files & Directories](#Users,-Groups,-and-Files-&-Directories)
   - [priv-esc Users](#priv-esc-Users)
   - [Groups](#Groups)
-  - [Files & Directories](#Files-&-Directories)
+  - [Files and Directories](#Files-and-Directories)
   - [File Permissions](#File-Permissions)
   - [Directory Permissions](#Directory-Permissions)
   - [Special Permissions](#Special-Permissions)
@@ -552,7 +552,7 @@ secondary (or supplementary) groups.
 By default, a user’s primary group has the same name
 as their user account.
 
-#### Files & Directories
+#### Files and Directories
 All files & directories have a single owner and a group.
 Permissions are defined in terms of read, write, and execute
 operations.
