@@ -39,7 +39,7 @@ Hacking linux
   - [General Concepts](#General-Concepts)
   - [Understanding Permissions in Linux](#Understanding-Permissions-in-Linux)
   - [Users, Groups, and Files & Directories](#Users,-Groups,-and-Files-&-Directories)
-  - [Users](#Users)
+  - [priv-esc Users](#priv-esc-Users)
   - [Groups](#Groups)
   - [Files & Directories](#Files-&-Directories)
   - [File Permissions](#File-Permissions)
@@ -535,7 +535,7 @@ Groups can have multiple users.
 Every file and directory defines its permissions in terms of a user, a
 group, and “others” (all other users).
 
-#### Users
+#### priv-esc Users
 
 User accounts are configured in the /etc/passwd file.
 User password hashes are stored in the /etc/shadow file.
