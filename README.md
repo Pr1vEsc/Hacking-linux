@@ -46,7 +46,7 @@ Hacking linux
   - [Directory Permissions](#Directory-Permissions)
   - [Special Permissions](#Special-Permissions)
   - [Viewing Permissions](#Viewing-Permissions)
-  - [Real and Effective and Saved UID and GID](#[Real-and-Effective-and-Saved-UID-and-GID)
+  - [Real and Effective and Saved UID and GID](#Real-and-Effective-and-Saved-UID-and-GID)
   - [Spawning Root Shells](#Spawning-Root-Shells)
   - [](#)
   - [](#)
