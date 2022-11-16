@@ -52,7 +52,7 @@ Hacking linux
     - [Custom Executable](#Custom-Executable)
     - [Native Reverse Shells](#Native-Reverse-Shells)
   - [Privilege Escalation Tools](#Privilege-Escalation-Tools)
-    - [Why use tools?](#Why-use-tools?)
+    - [Why use tools](#Why-use-tools)
     - [Linux Smart Enumeration](#Linux-Smart-Enumeration)
     - [LinEnum](#LinEnum)
     - [Other Tools](#Other-Tools)
@@ -693,7 +693,7 @@ All can be caught using a simple netcat listener.
 
 ## Privilege Escalation Tools
 
-#### Why use tools?
+#### Why use tools
 Tools allow us to automate the reconnaissance that can identify
 potential privilege escalations.
 While it is always important to understand what tools are doing,
