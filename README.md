@@ -959,6 +959,7 @@ $ echo '$6$Tb/euwmK$OXA.dwMeOAcopwBl68boTG5zi65wIHsc84OWAIye5VITLLtVlaXvRDJXET..
 ```
 4.
 Crack the password hash using john:
+```
 $ john --format=sha512crypt --wordlist=/usr/share/wordlists/rockyou.txt hash.txt
 ...
 Loaded 1 password hash (sha512crypt, crypt(3) $6$ [SHA512 128/128 SSE2 2x])
