@@ -72,9 +72,9 @@ Hacking linux
   - [Shell Escape Sequences](#Shell-Escape-Sequences)
   - [Abusing Intended Functionality](#Abusing-Intended-Functionality)
   - [Environment Variables](#Environment-Variables)
-  - [LD_PRELOAD](#LD-_-PRELOAD)
+  - [LD PRELOAD](#LD-PRELOAD)
     - [Limitations](#Limitations)
-  - [LD_LIBRARY_PATH](#LD-_-LIBRARY-_-PATH)
+  - [LD LIBRARY PATH](#LD-LIBRARY-PATH)
 - [Cron Jobs](#Cron-Jobs)
   
   
@@ -1266,7 +1266,7 @@ The env_keep option can be used to keep certain environment
 variables from the user’s environment.
 The configured options are displayed when running sudo -l
 
-### LD_PRELOAD
+### LD PRELOAD
 LD_PRELOAD is an environment variable which can be set to
 the path of a shared object (.so) file.
 When set, the shared object will be loaded before any others.
@@ -1318,7 +1318,7 @@ $ sudo LD_PRELOAD=/tmp/preload.so apache2
 uid=0(root) gid=0(root) groups=0(root)
 ```
 
-### LD_LIBRARY_PATH
+### LD LIBRARY PATH
 The LD_LIBRARY_PATH environment variable contains a set of directories where
 shared libraries are searched for first.
 The ldd command can be used to print the shared libraries used by a program:
