@@ -91,9 +91,18 @@ Hacking linux
   - [Cron (Wildcards)](#Cron-Wildcards)
   - [Cron (File Overwrite)](#Cron-File-Overwrite)
   - [NFS Root Squashing](#NFS-Root-Squashing)
-  
-
-  
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+## linux local password attacks hackthebox
+- [credential hunting in linux](#credential-hunting-in-linux)
+  - [](#)
+  - [](#)
+  - [](#)
+  - [](#)
+- [passwd shadow and opasswd](#passwd-shadow-and-opasswd)
+  - [](#)
+  - [](#)
+  - [](#)
+  - [](#)
 -------------------------------------------------------------------------------------------------------------------------------------------------------
   
   # one tricks/others
