@@ -32,7 +32,8 @@ Hacking linux
   - [SMB](#SMB)
   - [SNMP](#SNMP)
 -------------------------------------------------------------------------------------------------------------------------------------------------------
-- [Password Attacks](#Password-Attacks)
+## Passowrd Attacks
+- [Linux Password Attacks](#Linux-Password-Attacks)
 - [Linux Credential Storage](#Linux-Credential-Storage)
   -[Shadow File](#Shadow-File)
   - [Passwd File](#Passwd-File)
