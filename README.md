@@ -32,6 +32,15 @@ Hacking linux
   - [SMB](#SMB)
   - [SNMP](#SNMP)
 -------------------------------------------------------------------------------------------------------------------------------------------------------
+## Password Attacks
+- [Password Attacks](#Password-Attacks)
+- [Linux Credential Storage](#Linux-Credential-Storage)
+  -[Shadow File](#Shadow-File)
+  - [Passwd File](#Passwd-File)
+- [](#)
+- [](#)
+- [](#)
+---------------------------------------------------------------------------------------------------------------------------------------------------------
 - [Linux Privilige Escalation](#Linux-Privilige-Escalation)
 
 - [Tib3rius ⁣Privilege Escalation](#Tib3rius-Privilege-Escalation)
@@ -516,7 +525,57 @@ If you would like to install snmpcheck on your local Linux box, consider the fol
 ![image](https://user-images.githubusercontent.com/24814781/187435981-6446e39a-c9b5-4810-8989-e6f16d3cc9f8.png)
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------
+## Password Attacks
 
+## Linux Credential Storage
+As we already know, Linux-based systems handle everything in the form of a file. Accordingly, passwords are also stored encrypted in a file. This file is called the shadow file and is located in /etc/shadow and is part of the Linux user management system. In addition, these passwords are commonly stored in the form of hashes. An example can look like this:
+
+## Shadow File
+``` 
+root@htb:~# cat /etc/shadow
+
+...SNIP...
+htb-student:$y$j9T$3QSBB6CbHEu...SNIP...f8Ms:18955:0:99999:7:::
+```
+The /etc/shadow file has a unique format in which the entries are entered and saved when new users are created.
+
+![image](https://user-images.githubusercontent.com/24814781/203430939-9dab54f4-7556-49fb-abed-de9be894c049.png)
+
+The encryption of the password in this file is formatted as follows:
+
+![image](https://user-images.githubusercontent.com/24814781/203431003-9176ba26-347d-4505-93b7-ae34b66fd5a4.png)
+
+The type (id) is the cryptographic hash method used to encrypt the password. Many different cryptographic hash methods were used in the past and are still used by some systems today.
+
+```
+ID 	        Cryptographic Hash Algorithm
+$1$ 	      MD5  - https://en.wikipedia.org/wiki/MD5
+$2a$ 	      Blowfish  - https://en.wikipedia.org/wiki/Blowfish_(cipher)
+$5$ 	      SHA-256  - https://en.wikipedia.org/wiki/SHA-2
+$6$ 	      SHA-512  - https://en.wikipedia.org/wiki/SHA-2
+$sha1$     	SHA1crypt  - https://en.wikipedia.org/wiki/SHA-1
+$y$ 	      Yescrypt  - https://github.com/openwall/yescrypt
+$gy$        Gost-yescrypt  - https://www.openwall.com/lists/yescrypt/2019/06/30/1
+$7$      	 Scrypt  - https://en.wikipedia.org/wiki/Scrypt
+```
+
+However, a few more files belong to the user management system of Linux. The other two files are /etc/passwd and /etc/group. In the past, the encrypted password was stored together with the username in the /etc/passwd file, but this was increasingly recognized as a security problem because the file can be viewed by all users on the system and must be readable. The /etc/shadow file can only be read by the user root.
+
+## Passwd File
+```
+Suljov@htb[/htb]$ cat /etc/passwd
+
+...SNIP...
+htb-student:x:1000:1000:,,,:/home/htb-student:/bin/bash
+```
+
+![image](https://user-images.githubusercontent.com/24814781/203431604-0f5d17df-0801-47c9-aa6e-55e97ea74b71.png)
+
+The x in the password field indicates that the encrypted password is in the /etc/shadow file. However, the redirection to the /etc/shadow file does not make the users on the system invulnerable because if the rights of this file are set incorrectly, the file can be manipulated so that the user root does not need to type a password to log in. Therefore, an empty field means that we can log in with the username without entering a password.
+
+https://tldp.org/HOWTO/pdf/User-Authentication-HOWTO.pdf
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
 # Linux Privilige Escalation
 
 ## Tib3rius ⁣Privilege Escalation
