@@ -666,7 +666,7 @@ Suljov@htb[/htb]$ wc -l inlane.wordlist
 ```
 -----
 
-## Password Reuse and fault Passwords
+## Password Reuse and default Passwords
 
 It is common for both users and administrators to leave defaults in place. Administrators have to keep track of all the technology, infrastructure, and applications along with the data being accessed. In this case, the same password is often used for configuration purposes, and then the password is forgotten to be changed for one interface or another. In addition, many applications that work with authentication mechanisms, basically almost all, often come with default credentials after installation. These default credentials may be forgotten to be changed after configuration, especially when it comes to internal applications where the administrators assume that no one else will find them and do not even try to use them.
 
