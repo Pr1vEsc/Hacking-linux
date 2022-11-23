@@ -43,7 +43,7 @@ Hacking linux
   - [Credential Stuffing](#Credential-Stuffing)
   - [Credential Stuffing - Hydra Syntax](#Credential-Stuffing---Hydra-Syntax)
   - [Credential Stuffing - Hydra](#Credential-Stuffing---Hydra)
-  - [Google Search - Default Credentials](#Google-earch ---Default-Credentials)
+  - [Google Search - Default Credentials](#Google-Search---Default-Credentials)
 - [Linux Password Attacks](#Linux-Password-Attacks)
 - [Linux Credential Storage](#Linux-Credential-Storage)
   -[Shadow File](#Shadow-File)
