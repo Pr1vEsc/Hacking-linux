@@ -36,7 +36,7 @@ Hacking linux
 - [Password Mutations](#Password-Mutations)
   - [Password List](#Password-List)
   - [Hashcat Rule File](#Hashcat-Rule-File)
-  - [Generating Rule-based Wordlist](#Generating-Rule---based-Wordlist)
+  - [Generating Rule based Wordlist](#Generating-Rule-based-Wordlist)
   - [Hashcat Existing Rules](#Hashcat-Existing-Rules)
   - [Generating Wordlists Using CeWL](#Generating-Wordlists-Using-CeWL)
 - [Password Reuse and Default Passwords](#Password-Reuse-and-Default-Passwords)
