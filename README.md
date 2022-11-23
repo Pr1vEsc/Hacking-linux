@@ -39,6 +39,11 @@ Hacking linux
   - [Generating Rule-based Wordlist](#Generating-Rule-based-Wordlist)
   - [Hashcat Existing Rules](#Hashcat-Existing-Rules)
   - [Generating Wordlists Using CeWL](#Generating-Wordlists-Using-CeWL)
+- [Password Reuse and Default Passwords](#Password-Reuse-and-Default-Passwords)
+  - [Credential Stuffing](#Credential-Stuffing)
+  - [Credential Stuffing - Hydra Syntax](#Credential-Stuffing---Hydra-Syntax)
+  - [Credential Stuffing - Hydra](#Credential-Stuffing---Hydra)
+  - [Google Search - Default Credentials](#Google-earch ---Default-Credentials)
 - [Linux Password Attacks](#Linux-Password-Attacks)
 - [Linux Credential Storage](#Linux-Credential-Storage)
   -[Shadow File](#Shadow-File)
@@ -707,6 +712,189 @@ htb-student:x:1000:1000:,,,:/home/htb-student:/bin/bash
 The x in the password field indicates that the encrypted password is in the /etc/shadow file. However, the redirection to the /etc/shadow file does not make the users on the system invulnerable because if the rights of this file are set incorrectly, the file can be manipulated so that the user root does not need to type a password to log in. Therefore, an empty field means that we can log in with the username without entering a password.
 
 https://tldp.org/HOWTO/pdf/User-Authentication-HOWTO.pdf
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## Password Mutations
+
+Many people create their passwords according to simplicity instead of security. To eliminate this human weakness that often compromises security measures, password policies can be created on all systems that determine how a password should look. This means that the system recognizes whether the password contains capital letters, special characters, and numbers. In addition, most password policies require a minimum length of eight characters in a password, including at least one of the above specifications.
+
+In the previous sections, we guessed very simple passwords, but it becomes much more difficult to adapt this to systems that apply password policies that force the creation of more complex passwords.
+
+Unfortunately, the tendency for users to create weak passwords also occurs despite the existence of password policies. Most people/employees follow the same rules when creating more complex passwords. Passwords are often created closely related to the service used. This means that many employees often select passwords that can have the company's name in the passwords. A person's preferences and interests also play a significant role. These can be pets, friends, sports, hobbies, and many other elements of life. OSINT information gathering can be very helpful for finding out more about a user's preferences and may assist with password guessing.
+
+Commonly, users use the following additions for their password to fit the most common password policies:
+
+![image](https://user-images.githubusercontent.com/24814781/203631831-dc4199e9-e10d-4090-9af4-2c0acb0b733d.png)
+
+Considering that many people want to keep their passwords as simple as possible despite password policies, we can create rules for generating weak passwords. Based on statistics provided by WPengine
+```
+https://wpengine.com/resources/passwords-unmasked-infographic/
+```
+
+most password lengths are not longer than ten characters. So what we can do is to pick specific terms that are at least five characters long and seem to be the most familiar to the users, such as the names of their pets, hobbies, preferences, and other interests. If the user chooses a single word (such as the current month), adds the current year, followed by a special character, at the end of their password, we would reach the ten-character password requirement. Considering that most companies require regular password changes, a user can modify their password by just changing the name of a month or a single number, etc. Let's use a simple example to create a password list with only one entry.
+
+### Password List
+example:
+```
+Suljov@htb[/htb]$ cat password.list
+
+password
+```
+We can use a very powerful tool called Hashcat
+```
+https://hashcat.net/hashcat/
+```
+to combine lists of potential names and labels with specific mutation rules to create custom wordlists.
+
+Hashcat uses a specific syntax for defining characters and words and how they can be modified. The complete list of this syntax can be found in the official documentation
+```
+https://hashcat.net/wiki/doku.php?id=rule_based_attack
+```
+of Hashcat. However, the ones listed below are enough for us to understand how Hashcat mutates words.
+
+![image](https://user-images.githubusercontent.com/24814781/203632158-23d50fb8-f5fc-48f5-a857-32ff0412c931.png)
+
+Each rule is written on a new line which determines how the word should be mutated. If we write the functions shown above into a file and consider the aspects mentioned, this file can then look like this:
+
+### Hashcat Rule File
+example:
+```
+Suljov@htb[/htb]$ cat custom.rule
+
+:
+c
+so0
+c so0
+sa@
+c sa@
+c sa@ so0
+$!
+$! c
+$! so0
+$! sa@
+$! c so0
+$! c sa@
+$! so0 sa@
+$! c so0 sa@
+```
+
+Hashcat will apply the rules of custom.rule for each word in password.list and store the mutated version in our mut_password.list accordingly. Thus, one word will result in fifteen mutated words in this case.
+
+### Generating Rule-based Wordlist
+
+```
+Suljov@htb[/htb]$ hashcat --force password.list -r custom.rule --stdout | sort -u > mut_password.list
+Suljov@htb[/htb]$ cat mut_password.list
+
+password
+Password
+passw0rd
+Passw0rd
+p@ssword
+P@ssword
+P@ssw0rd
+password!
+Password!
+passw0rd!
+p@ssword!
+Passw0rd!
+P@ssword!
+p@ssw0rd!
+P@ssw0rd!
+```
+
+Hashcat and John come with pre-built rule lists that we can use for our password generating and cracking purposes. One of the most used rules is best64.rule, which can often lead to good results. It is important to note that password cracking and the creation of custom wordlists is a guessing game in most cases. We can narrow this down and perform more targeted guessing if we have information about the password policy and take into account the company name, geographical region, industry, and other topics/words that users may select from to create their passwords. Exceptions are, of course, cases where passwords are leaked and found.
+
+### Hashcat Existing Rules
+
+```
+Suljov@htb[/htb]$ ls /usr/share/hashcat/rules/
+
+best64.rule                  specific.rule
+combinator.rule              T0XlC-insert_00-99_1950-2050_toprules_0_F.rule
+d3ad0ne.rule                 T0XlC-insert_space_and_special_0_F.rule
+dive.rule                    T0XlC-insert_top_100_passwords_1_G.rule
+generated2.rule              T0XlC.rule
+generated.rule               T0XlCv1.rule
+hybrid                       toggles1.rule
+Incisive-leetspeak.rule      toggles2.rule
+InsidePro-HashManager.rule   toggles3.rule
+InsidePro-PasswordsPro.rule  toggles4.rule
+leetspeak.rule               toggles5.rule
+oscommerce.rule              unix-ninja-leetspeak.rule
+rockyou-30000.rule
+```
+
+We can now use another tool called CeWL
+```
+https://github.com/digininja/CeWL
+```
+
+to scan potential words from the company's website and save them in a separate list. We can then combine this list with the desired rules and create a customized password list that has a higher probability of guessing a correct password. We specify some parameters, like the depth to spider (-d), the minimum length of the word (-m), the storage of the found words in lowercase (--lowercase), as well as the file where we want to store the results (-w).
+
+### Generating Wordlists Using CeWL
+```
+Suljov@htb[/htb]$ cewl https://www.inlanefreight.com -d 4 -m 6 --lowercase -w inlane.wordlist
+Suljov@htb[/htb]$ wc -l inlane.wordlist
+
+326
+```
+-----
+
+## Password Reuse andfault Passwords
+
+It is common for both users and administrators to leave defaults in place. Administrators have to keep track of all the technology, infrastructure, and applications along with the data being accessed. In this case, the same password is often used for configuration purposes, and then the password is forgotten to be changed for one interface or another. In addition, many applications that work with authentication mechanisms, basically almost all, often come with default credentials after installation. These default credentials may be forgotten to be changed after configuration, especially when it comes to internal applications where the administrators assume that no one else will find them and do not even try to use them.
+
+In addition, easy-to-remember passwords that can be typed quickly instead of typing 15-character long passwords are often used repeatedly because Single-Sign-On (SSO)
+```
+https://en.wikipedia.org/wiki/Single_sign-on
+```
+
+is not always immediately available during initial installation, and configuration in internal networks requires significant changes. When configuring networks, we sometimes work with vast infrastructures (depending on the company's size) that can have many hundreds of interfaces. Often one network device, such as a router, printer, or a firewall, is overlooked, and the default credentials are used, or the same password is reused.
+
+## Credential Stuffing
+
+There are various databases that keep a running list of known default credentials. One of them is the DefaultCreds-Cheat-Sheet.
+
+```
+https://github.com/ihebski/DefaultCreds-cheat-sheet
+```
+Here is a small excerpt from the entire table of this cheat sheet:
+
+
+![image](https://user-images.githubusercontent.com/24814781/203636551-c04ce3b0-b130-4da4-a900-1285d9041ec1.png)
+
+Default credentials can also be found in the product documentation, as they contain the steps necessary to set up the service successfully. Some devices/applications require the user to set up a password at install, but others use a default, weak password. Attacking those services with the default or obtained credentials is called Credential Stuffing.
+
+```
+https://owasp.org/www-community/attacks/Credential_stuffing
+```
+This is a simplified variant of brute-forcing because only composite usernames and the associated passwords are used.
+
+We can imagine that we have found some applications used in the network by our customers. After searching the internet for the default credentials, we can create a new list that separates these composite credentials with a colon (username:password). In addition, we can select the passwords and mutate them by our rules to increase the probability of hits.
+
+### Credential Stuffing - Hydra Syntax
+
+```
+Suljov@htb[/htb]$ hydra -C <user_pass.list> <protocol>://<IP>
+```
+### Credential Stuffing - Hydra
+
+```
+Suljov@htb[/htb]$ hydra -C user_pass.list ssh://10.129.42.197
+...
+
+```
+
+Here, OSINT plays another significant role. Because OSINT gives us a "feel" for how the company and its infrastructure are structured, we will understand which passwords and user names we can combine. We can then store these in our lists and use them afterward. In addition, we can use Google to see if the applications we find have hardcoded credentials that can be used.
+
+### Google Search - Default Credentials
+
+![image](https://user-images.githubusercontent.com/24814781/203636820-19ca5c50-da00-43a1-85f4-c0e2dd8505cf.png)
+
+Besides the default credentials for applications, some lists offer them for routers. One of these lists can be found here. It is much less likely that the default credentials for routers are left unchanged. Since these are the central interfaces for networks, administrators typically pay much closer attention to hardening them. Nevertheless, it is still possible that a router is overlooked or is currently only being used in the internal network for test purposes, which we can then exploit for further attacks.
+
+![image](https://user-images.githubusercontent.com/24814781/203636874-ff8bd3f8-9e83-4f7f-98e6-78d246a77575.png)
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------
 # Linux Privilige Escalation
