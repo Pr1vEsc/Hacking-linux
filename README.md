@@ -36,7 +36,7 @@ Hacking linux
 - [Password Mutations](#Password-Mutations)
   - [Password List](#Password-List)
   - [Hashcat Rule File](#Hashcat-Rule-File)
-  - [Generating Rule-based Wordlist](#Generating-Rule-based-Wordlist)
+  - [Generating Rule-based Wordlist](#Generating-Rule---based-Wordlist)
   - [Hashcat Existing Rules](#Hashcat-Existing-Rules)
   - [Generating Wordlists Using CeWL](#Generating-Wordlists-Using-CeWL)
 - [Password Reuse and Default Passwords](#Password-Reuse-and-Default-Passwords)
@@ -605,7 +605,7 @@ $! c so0 sa@
 
 Hashcat will apply the rules of custom.rule for each word in password.list and store the mutated version in our mut_password.list accordingly. Thus, one word will result in fifteen mutated words in this case.
 
-### Generating Rule-based Wordlist
+### Generating Rule based Wordlist
 
 ```
 Suljov@htb[/htb]$ hashcat --force password.list -r custom.rule --stdout | sort -u > mut_password.list
