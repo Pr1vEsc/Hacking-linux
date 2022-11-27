@@ -770,7 +770,20 @@ htb-student:x:1000:1000:,,,:/home/htb-student:/bin/bash
 The x in the password field indicates that the encrypted password is in the /etc/shadow file. However, the redirection to the /etc/shadow file does not make the users on the system invulnerable because if the rights of this file are set incorrectly, the file can be manipulated so that the user root does not need to type a password to log in. Therefore, an empty field means that we can log in with the username without entering a password.
 
 https://tldp.org/HOWTO/pdf/User-Authentication-HOWTO.pdf
---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+## Credential Hunting in Linux
+
+Hunting for credentials is one of the first steps once we have access to the system. These low-hanging fruits can give us elevated privileges within seconds or minutes. Among other things, this is part of the local privilege escalation process that we will cover here. However, it is important to note here that we are far from covering all possible situations and therefore focus on the different approaches.
+
+We can imagine that we have successfully gained access to a system via a vulnerable web application and have therefore obtained a reverse shell, for example. Therefore, to escalate our privileges most efficiently, we can search for passwords or even whole credentials that we can use to log in to our target. There are several sources that can provide us with credentials that we put in four categories. These include, but are not limited to:
+
+![image](https://user-images.githubusercontent.com/24814781/204114166-666ed3b0-51d1-4c21-9d5b-abff3721d9f8.png)
+
+Enumerating all these categories will allow us to increase the probability of successfully finding out with some ease credentials of existing users on the system. There are countless different situations in which we will always see different results. Therefore, we should adapt our approach to the circumstances of the environment and keep the big picture in mind. Above all, it is crucial to keep in mind how the system works, its focus, what purpose it exists for, and what role it plays in the business logic and the overall network. For example, suppose it is an isolated database server. In that case, we will not necessarily find normal users there since it is a sensitive interface in the management of data to which only a few people are granted access.
+
+
+----------------------------------------------------------------------------------------------------------------------------------------
 
 ## Password Mutations
 
