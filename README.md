@@ -46,7 +46,7 @@ Hacking linux
   - [Google Search - Default Credentials](#Google-Search---Default-Credentials)
 - [Linux Password Attacks](#Linux-Password-Attacks)
 - [Linux Credential Storage](#Linux-Credential-Storage)
-  -[Shadow File](#Shadow-File)
+  - [Shadow File](#Shadow-File)
   - [Passwd File](#Passwd-File)
 - [](#)
 - [](#)
