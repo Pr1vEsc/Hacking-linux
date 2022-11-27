@@ -1297,12 +1297,12 @@ The most interesting field for us is the Password information field in this sect
 
 Usually, we find the value x in this field, which means that the passwords are stored in an encrypted form in the /etc/shadow file. However, it can also be that the /etc/passwd file is writeable by mistake. This would allow us to clear this field for the user root so that the password info field is empty. This will cause the system not to send a password prompt when a user tries to log in as root.
 
-## Editing /etc/passwd - Before
+## Editing etc passwd - Before
 ```
 root:x:0:0:root:/root:/bin/bash
 ```
 
-## Editing /etc/passwd - After
+## Editing etc passwd - After
 ```
 root::0:0:root:/root:/bin/bash
 ```
