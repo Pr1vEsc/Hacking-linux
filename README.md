@@ -84,9 +84,49 @@ Hacking linux
   - [Cracking Linux Credentials](#Cracking-Linux-Credentials)
   - [Hashcat - Cracking Unshadowed Hashes](#Hashcat---Cracking-Unshadowed-Hashes)
   - [Hashcat - Cracking MD5 Hashes](#Hashcat---Cracking-MD5-Hashes)
-- [](#)
-- [](#)
-- [](#)
+- [Pass the Ticket PtT from Linux](#Pass-the-Ticket-PtT-from-Linux)
+  - [Kerberos on Linux](#Kerberos-on-Linux)
+  - [Linux Auth via Port Forward](#Linux-Auth-via-Port-Forward)
+  - [Identifying Linux and Active Directory Integration](#Identifying-Linux-and-Active-Directory-Integration)
+  - [PS - Check if Linux Machine is Domain Joined](#PS---Check-if-Linux-Machine-is-Domain-Joined)
+  - [Finding Kerberos Tickets in Linux](#Finding-Kerberos-Tickets-in-Linux)
+  - [Finding Keytab Files](#Finding-Keytab-Files)
+  - [Using Find to Search for Files with Keytab in the Name](#Using-Find-to-Search-for-Files-with-Keytab-in-the-Name)
+  - [Identifying Keytab Files in Cronjobs](#Identifying-Keytab-Files-in-Cronjobs)
+  - [Finding ccache Files](#Finding-ccache-Files)
+  - [Reviewing Environment Variables for ccache Files](#Reviewing-Environment-Variables-for-ccache-Files)
+  - [Searching for ccache Files in tmp](#Searching-for-ccache-Files-in-tmp)
+  - [Abusing KeyTab Files](#Abusing-KeyTab-Files)
+  - [Listing keytab File Information](#Listing-keytab-File-Information)
+  - [Impersonating a User with a keytab](#Impersonating-a-User-with-a-keytab)
+  - [Connecting to SMB Share as a user](#Connecting-to-SMB-Share-as-a-user)
+  - [Keytab Extract](#Keytab-Extract)
+  - [Extracting Keytab Hashes with KeyTabExtract](#Extracting-Keytab-Hashes-with-KeyTabExtract)
+  - [Log in as a user](#Log-in-as-a-user)
+  - [Obtaining More Hashes](#Obtaining-More-Hashes)
+  - [Abusing Keytab ccache](#Abusing-Keytab-ccache)
+  - [Privilege Escalation to Root](#Privilege-Escalation-to-Root)
+  - [Looking for ccache Files](#Looking-for-ccache-Files)
+  - [Identifying-Group-ZMembership-with-the-id-Command](-Identifying-Group-ZMembership-with-the-id-Command)
+  - [Importing the ccache File into our Current Session](#Importing-the-ccache-File-into-our-Current-Session)
+  - [Using Linux Attack Tools with Kerberos](#Using-Linux-Attack-Tools-with-Kerberos)
+  - [Host File Modified](#Host-File-Modified)
+  - [Proxychains Configuration File](#Proxychains-Configuration-File)
+  - [Download Chisel to our Attack Host](#Download-Chisel-to-our-Attack-Host)
+  - [Connect to MS01 with xfreerdp](#Connect-to-a-host-with-xfreerdp)
+  - [Execute chisel from host](#Execute-chisel-from-host)
+  - [Setting the KRB5CCNAME Environment Variable](#Setting-the-KRB5CCNAME-Environment-Variable)
+  - [Using Impacket with proxychains and Kerberos Authentication](#Using-Impacket-with-proxychains-and-Kerberos-Authentication)
+  - [Installing Kerberos Authentication Package](#Installing-Kerberos-Authentication-Package)
+  - [Default Kerberos Version 5 realm](#Default-Kerberos-Version-5-realm)
+  - [Administrative Server for your Kerberos Realm](#Administrative-Server-for-your-Kerberos-Realm)
+  - [Kerberos Configuration File for a domain](#Kerberos-Configuration-File-for-a-domain)
+  - [Using Evil-WinRM with Kerberos](#Using-Evil-WinRM-with-Kerberos)
+  - [Miscellaneous](#Miscellaneous)
+  - [Impacket Ticket Converter](#Impacket-Ticket-Converter)
+  - [Importing Converted Ticket into Windows Session with Rubeus](#Importing-Converted-Ticket-into-Windows-Session-with-Rubeus)
+  - [Linikatz](#Linikatz)
+
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
 - [Linux Privilige Escalation](#Linux-Privilige-Escalation)
 
@@ -1395,6 +1435,149 @@ E9uMSmiQeRh4pAAgzuvkq1
 ```
 Suljov@htb[/htb]$ hashcat -m 500 -a 0 md5-hashes.list rockyou.txt
 ```
+
+## Pass the Ticket PtT from Linux
+
+
+## Kerberos on Linux
+
+
+## Linux Auth via Port Forward
+
+
+## Identifying Linux and Active Directory Integration
+
+
+## PS - Check if Linux Machine is Domain Joined
+
+
+## Finding Kerberos Tickets in Linux
+
+
+## Finding Keytab Files
+
+
+## Using Find to Search for Files with Keytab in the Name
+
+
+## Identifying Keytab Files in Cronjobs
+
+
+## Finding ccache Files
+
+
+## Reviewing Environment Variables for ccache Files
+
+
+## Searching for ccache Files in tmp
+
+
+## Listing keytab File Information
+
+
+## Connecting to SMB Share as a user
+
+
+## Keytab Extract
+
+
+## Log in as a user
+
+
+## Obtaining More Hashes
+
+
+##  Privilege Escalation to Root
+
+
+
+## Abusing Keytab ccache
+
+
+
+## Looking for ccache Files
+
+
+
+##  Identifying Group ZMembership with the id Command
+
+
+
+## Importing the ccache File into our Current Session
+
+
+
+## Using Linux Attack Tools with Kerberos
+
+
+
+## Host File Modified
+
+
+
+## Proxychains Configuration File
+
+
+
+## Download Chisel to our Attack Host
+
+
+
+## Connect to MS01 with xfreerdp
+
+
+
+## Execute chisel from host
+
+
+
+## Setting the KRB5CCNAME Environment Variable
+
+
+
+## Using Impacket with proxychains and Kerberos Authentication
+
+
+
+## Installing Kerberos Authentication Package
+
+
+
+## Default Kerberos Version 5 realm
+
+
+
+## Administrative Server for your Kerberos Realm
+
+
+
+## Kerberos Configuration File for a domain
+
+
+
+## Using Evil-WinRM with Kerberos
+
+
+
+## Miscellaneous
+
+
+
+## Impacket Ticket Converter
+
+
+
+## Importing Converted Ticket into Windows Session with Rubeus
+
+
+
+## Linikatz
+
+
+
+## 
+
+
 
 ----------------------------------------------------------------------------------------------------------------------------------------
 
