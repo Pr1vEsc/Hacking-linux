@@ -113,7 +113,7 @@ Hacking linux
   - [Host File Modified](#Host-File-Modified)
   - [Proxychains Configuration File](#Proxychains-Configuration-File)
   - [Download Chisel to our Attack Host](#Download-Chisel-to-our-Attack-Host)
-  - [Connect to MS01 with xfreerdp](#Connect-to-a-host-with-xfreerdp)
+  - [Connect to a host with xfreerdp](#Connect-to-a-host-with-xfreerdp)
   - [Execute chisel from host](#Execute-chisel-from-host)
   - [Setting the KRB5CCNAME Environment Variable](#Setting-the-KRB5CCNAME-Environment-Variable)
   - [Using Impacket with proxychains and Kerberos Authentication](#Using-Impacket-with-proxychains-and-Kerberos-Authentication)
@@ -1470,22 +1470,39 @@ Suljov@htb[/htb]$ hashcat -m 500 -a 0 md5-hashes.list rockyou.txt
 
 
 ## Searching for ccache Files in tmp
+  
+  
+  
+##  Abusing KeyTab Files
+  
 
 
 ## Listing keytab File Information
+  
+  
+  
+## Impersonating a User with-a keytab
 
+  
 
 ## Connecting to SMB Share as a user
 
 
 ## Keytab Extract
+  
+  
+  
+## Extracting Keytab Hashes with KeyTabExtract
 
+  
 
 ## Log in as a user
 
 
+  
 ## Obtaining More Hashes
 
+  
 
 ##  Privilege Escalation to Root
 
@@ -1523,7 +1540,7 @@ Suljov@htb[/htb]$ hashcat -m 500 -a 0 md5-hashes.list rockyou.txt
 
 
 
-## Connect to MS01 with xfreerdp
+## Connect to a host with xfreerdp
 
 
 
