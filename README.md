@@ -107,7 +107,7 @@ Hacking linux
   - [Abusing Keytab ccache](#Abusing-Keytab-ccache)
   - [Privilege Escalation to Root](#Privilege-Escalation-to-Root)
   - [Looking for ccache Files](#Looking-for-ccache-Files)
-  - [Identifying Group ZMembership with the id Command](-Identifying-Group-ZMembership-with-the-id-Command)
+  - [Identifying Group ZMembership with the id Command](#Identifying-Group-ZMembership-with-the-id-Command)
   - [Importing the ccache File into our Current Session](#Importing-the-ccache-File-into-our-Current-Session)
   - [Using Linux Attack Tools with Kerberos](#Using-Linux-Attack-Tools-with-Kerberos)
   - [Host File Modified](#Host-File-Modified)
