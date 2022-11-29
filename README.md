@@ -145,7 +145,7 @@ Hacking linux
   - [Using a for-loop to Display Extracted Contents](#Using-a-for-loop-to-Display-Extracted-Contents)
   - [Cracking BitLocker Encrypted Drives](#Cracking-BitLocker-Encrypted-Drives)
   - [Using bitlocker2john](#Using-bitlocker2john)
-  - Using hashcat to Crack backup hash[](#Using-hashcat-to-Crack-backup-hash)
+  - [Using hashcat to Crack backup hash](#Using-hashcat-to-Crack-backup-hash)
   - [Viewing the Cracked Hash 2](#Viewing-the-Cracked-Hash-2)
   - [Windows - Mounting BitLocker VHD](#Windows---Mounting-BitLocker-VHD)
  
