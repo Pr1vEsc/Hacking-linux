@@ -2218,6 +2218,8 @@ $bitlocker$0$16$02b329c0453b9273f2fc1b927443b5fe$1048576$12$00b0a67f961dd8010300
 ``` 
 Once we have cracked the password, we will be able to open the encrypted drives. The easiest way to mount a BitLocker encrypted virtual drive is to transfer it to a Windows system and mount it. To do this, we only have to double-click on the virtual drive. Since it is password protected, Windows will show us an error. After mounting, we can again double-click BitLocker to prompt us for the password.
 
+## Windows - Mounting BitLocker VHD
+
 ![image](https://user-images.githubusercontent.com/24814781/204616296-ea2d3f65-53b3-48d3-9b44-cbd04f2798be.png)
 
 
