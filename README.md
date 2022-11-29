@@ -122,6 +122,19 @@ Hacking linux
   - [Impacket Ticket Converter](#Impacket-Ticket-Converter)
   - [Importing Converted Ticket into Windows Session with Rubeus](#Importing-Converted-Ticket-into-Windows-Session-with-Rubeus)
   - [Linikatz](#Linikatz)
+- [Protected Files](#Protected-Files)
+  - [Hunting for Encoded Files](#Hunting-for-Encoded-Files)
+  - [Hunting for Files](#Hunting-for-Files)
+  - [Hunting for SSH Keys](#Hunting-for-SSH-Keys)
+  - [Encrypted SSH Keys](#Encrypted-SSH-Keys)
+  - [Cracking with John](#Cracking-with-John)
+  - [John Hashing Scripts](#John-Hashing-Scripts)
+  - [Cracking SSH Keys](#Cracking-SSH-Keys)
+  - [Cracking Documents](#Cracking-Documents)
+  - [Cracking Microsoft Office Documents](#Cracking-Microsoft-Office-Documents)
+  - [Cracking PDFs](#Cracking-PDFs)
+- [](#)
+ 
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
 - [Linux Privilige Escalation](#Linux-Privilige-Escalation)
