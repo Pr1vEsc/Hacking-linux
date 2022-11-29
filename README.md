@@ -1896,6 +1896,8 @@ can be cracked.
 ## Cracking with John
 
 John The Ripper has many different scripts to generate hashes from files that we can then use for cracking. We can find these scripts on our system using the following command.
+
+## John Hashing Scripts
 ```
 Suljov@htb[/htb]$ locate *2john*
 
