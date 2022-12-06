@@ -2489,7 +2489,7 @@ the group, and one for all “other” users (can also be referred to
 as “world”).
 Only the owner can change permissions.
 
-#### File Permissions 2
+#### File Permissions 
 File permissions are self explanatory:
 • Read – when set, the file contents can be read.
 • Write – when set, the file contents can be modified.
@@ -3280,7 +3280,7 @@ User crontabs are usually located in /var/spool/cron/ or
 /var/spool/cron/crontabs/
 The system-wide crontab is located at /etc/crontab.
 
-## File Permissions
+## File Permissions 2
 Misconfiguration of file permissions associated with cron jobs
 can lead to easy privilege escalation.
 If we can write to a program or script which gets run as part of
