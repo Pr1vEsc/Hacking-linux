@@ -195,7 +195,7 @@ Hacking linux
     - [Limitations](#Limitations)
   - [LD LIBRARY PATH](#LD-LIBRARY-PATH)
 - [Cron Jobs](#Cron-Jobs)
-  - [File Permissions](#File-Permissions)
+  - [File Permissions 2](#File-Permissions-2)
   - [PATH Environment Variable](#PATH-Environment-Variable)
   - [Wildcards](#Wildcards)
   
@@ -2489,7 +2489,7 @@ the group, and one for all “other” users (can also be referred to
 as “world”).
 Only the owner can change permissions.
 
-#### File Permissions
+#### File Permissions 2
 File permissions are self explanatory:
 • Read – when set, the file contents can be read.
 • Write – when set, the file contents can be modified.
