@@ -220,11 +220,6 @@ Hacking linux
 - [Privilege Escalation Strategy](#Privilege-Escalation-Strategy)
   - [Enumeration](#Enumeration)
   - [Strategy](#Strategy)
-  - [](#)
-  - [](#)
-  - [](#)
-  - [](#)
-  - [](#)
   
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 - [Linux Privilige Escalation 1](#Linux-Privilige-Escalation-1)
