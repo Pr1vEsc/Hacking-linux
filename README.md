@@ -198,7 +198,7 @@ Hacking linux
   - [File Permissions 2](#File-Permissions-2)
   - [PATH Environment Variable](#PATH-Environment-Variable)
   - [Wildcards](#Wildcards)
-- [SUID and SGID Executables](#SUID and SGID Executables)
+- [SUID and SGID Executables](#SUID-and-SGID-Executables)
   - [Finding SUID and SGID Files](#Finding-SUID-and-SGID-Files)
   - [Shell Escape Sequences 2](#Shell-Escape-Sequences-2)
   - [A Quick Word on LD-PRELOAD and LD-LIBRARY-PATH](#A-Quick-Word-on-LD-PRELOAD-and-LD-LIBRARY-PATH)
